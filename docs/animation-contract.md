@@ -1,6 +1,6 @@
 # 动画键名契约（Animation Contract）
 
-> v0.2-draft · 2026-11-07 起草，同日随 PR #33 更新资源状态（待 C 的 animationMappings 接入后升 v1.0）
+> v0.2-draft · 2026-11-07 起草，同日随 PR #33 更新资源状态（C 侧接入已随 #36 落地，待联调验收后升 v1.0）
 > 数据源：`game/public/assets/sprites/manifest.json`（ranged-draft-v1，PR #8 + #33，10 图集 / 224 帧 / 59 动画）× `game/src/config/gameConfig.js`（PR #7）
 > **唯一真源**：贴图帧以 manifest 的 `sha256` 为准；动画键以本文为接线约定。代码侧**禁止硬编码帧号**，一律查 manifest 的 `animationNames`。
 
@@ -65,7 +65,7 @@
 
 角色演示动作建议 4 帧/240ms，弹道演示 4 帧/320ms；仅是预览节奏，生成弹道和耗蓝由 C 的输入/冷却逻辑负责，禁止依赖 animationcomplete 造成重复发射。空中发射暂复用同一上身动作，世界位移由物理控制；不把复用称为专用空中补帧。
 
-本契约涉及共享接线约定：资源与键名已随 #33 落地，**键名最终以 C 在 `Player.js` 的 `animationMappings` 中采用的为准**。C 未接入前 `BootScene` 不注册动画键，D 侧 `playAnim` 按契约缺键回退 `idle` 并 warn，属预期行为而非错误。A 侧另提供 `game/src/animations/characterAnimations.js` 与 59 键建议表，C 只需两行接入，不必改 A 的 JSON。#19 保持 open 至联调验收。
+本契约涉及共享接线约定：资源与键名已随 #33 落地，**键名最终以 C 在 `Player.js` 的 `animationMappings` 中采用的为准**。C 未接入前 `BootScene` 不注册动画键，D 侧 `playAnim` 按契约缺键回退 `idle` 并 warn，属预期行为而非错误。C 侧接入已随 #36 落地：`game/src/scenes/spriteAtlases.js` 负责 preload / register / `getAnimationKey`，动作→动画名的映射由 `Player.js` 导出的 `selectPlayerAnimation()` 给出（即前文所称 `animationMappings`，以实际代码符号为准）；A 侧不另加 helper，也不改 C 的接线。#19 保持 open 至联调验收。
 
 ## 变更纪律
 
