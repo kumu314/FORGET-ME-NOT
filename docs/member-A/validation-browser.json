@@ -1,0 +1,241 @@
+{
+  "checkedAt": "2026-11-07T07:21:01.037Z",
+  "checks": [
+    {
+      "name": "All nine image decodes and cards",
+      "pass": true
+    },
+    {
+      "name": "Reduced motion starts paused",
+      "pass": true
+    },
+    {
+      "name": "No external network resources",
+      "pass": true
+    },
+    {
+      "name": "Stepping changes all nine rendered poses",
+      "pass": true
+    },
+    {
+      "name": "Facing flip changes all nine renderings",
+      "pass": true
+    },
+    {
+      "name": "Companion filter hides other groups",
+      "pass": true
+    },
+    {
+      "name": "All selectable animations render pixels",
+      "pass": true,
+      "detail": {
+        "visited": 53,
+        "options": 53
+      }
+    },
+    {
+      "name": "Elder and old dog select walk, never run",
+      "pass": true
+    },
+    {
+      "name": "Playback advances frames",
+      "pass": true
+    },
+    {
+      "name": "Pause holds every frame",
+      "pass": true
+    },
+    {
+      "name": "Text color contrast on cards",
+      "pass": true,
+      "detail": [
+        {
+          "fg": "a9b9b2",
+          "bg": "192528",
+          "ratio": 7.683258282956602
+        },
+        {
+          "fg": "edf0df",
+          "bg": "192528",
+          "ratio": 13.564608365162808
+        },
+        {
+          "fg": "e9c779",
+          "bg": "192528",
+          "ratio": 9.658965244348165
+        }
+      ]
+    },
+    {
+      "name": "No horizontal overflow at 390px",
+      "pass": true
+    },
+    {
+      "name": "Phaser smoke has no runtime/load errors",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "Phaser version 3.90.0",
+      "pass": true
+    },
+    {
+      "name": "Phaser loads all 200 named frames",
+      "pass": true
+    },
+    {
+      "name": "Phaser creates all 53 animation clips",
+      "pass": true
+    },
+    {
+      "name": "Animation registration is safe on scene re-entry",
+      "pass": true
+    },
+    {
+      "name": "Phaser supports elder cough but no jump",
+      "pass": true
+    },
+    {
+      "name": "Phaser applies foot pivot from atlas",
+      "pass": true
+    },
+    {
+      "name": "No browser page errors",
+      "pass": true,
+      "detail": []
+    }
+  ],
+  "pageErrors": [],
+  "phaser": {
+    "result": {
+      "version": "3.90.0",
+      "created": 53,
+      "again": 0,
+      "assets": [
+        {
+          "id": "player_youth",
+          "frames": 32,
+          "animations": 8,
+          "origin": [
+            0.5,
+            0.9583333333333334
+          ],
+          "expectedOrigin": [
+            0.5,
+            0.9583333333333334
+          ]
+        },
+        {
+          "id": "player_middle",
+          "frames": 32,
+          "animations": 8,
+          "origin": [
+            0.5,
+            0.9583333333333334
+          ],
+          "expectedOrigin": [
+            0.5,
+            0.9583333333333334
+          ]
+        },
+        {
+          "id": "player_elder",
+          "frames": 32,
+          "animations": 8,
+          "origin": [
+            0.5,
+            0.9583333333333334
+          ],
+          "expectedOrigin": [
+            0.5,
+            0.9583333333333334
+          ]
+        },
+        {
+          "id": "dog_puppy",
+          "frames": 16,
+          "animations": 5,
+          "origin": [
+            0.5,
+            0.9166666666666666
+          ],
+          "expectedOrigin": [
+            0.5,
+            0.9166666666666666
+          ]
+        },
+        {
+          "id": "dog_adult",
+          "frames": 16,
+          "animations": 5,
+          "origin": [
+            0.5,
+            0.9375
+          ],
+          "expectedOrigin": [
+            0.5,
+            0.9375
+          ]
+        },
+        {
+          "id": "dog_elder",
+          "frames": 16,
+          "animations": 5,
+          "origin": [
+            0.5,
+            0.9375
+          ],
+          "expectedOrigin": [
+            0.5,
+            0.9375
+          ]
+        },
+        {
+          "id": "boss_teacher",
+          "frames": 24,
+          "animations": 6,
+          "origin": [
+            0.5,
+            0.984375
+          ],
+          "expectedOrigin": [
+            0.5,
+            0.984375
+          ]
+        },
+        {
+          "id": "boss_employer",
+          "frames": 24,
+          "animations": 6,
+          "origin": [
+            0.5,
+            0.984375
+          ],
+          "expectedOrigin": [
+            0.5,
+            0.984375
+          ]
+        },
+        {
+          "id": "boss_child",
+          "frames": 8,
+          "animations": 2,
+          "origin": [
+            0.5,
+            0.9791666666666666
+          ],
+          "expectedOrigin": [
+            0.5,
+            0.9791666666666666
+          ]
+        }
+      ],
+      "elderJump": false,
+      "elderCough": true
+    },
+    "errors": []
+  },
+  "passed": 20,
+  "total": 20,
+  "previewSha256": "90e6c1a5adf3d4d57e85472b4a7b8f3111bb35bcd561b2da82adeb5d67f59919"
+}
