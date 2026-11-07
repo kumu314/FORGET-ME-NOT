@@ -420,7 +420,7 @@ export default class StageScene extends Phaser.Scene {
     if (next) {
       this.scene.restart({ phase: next });
     } else {
-      this._toast('—— 完 ——');
+      this.scene.start('EndingScene');
     }
   }
 
