@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "integration-draft-v1",
+  "status": "ranged-draft-v1",
   "owner": "member-A",
   "facing": "right",
   "filter": "nearest",
@@ -15,7 +15,7 @@
         "w": 24,
         "h": 24
       },
-      "frameCount": 32,
+      "frameCount": 36,
       "animationNames": [
         "idle",
         "run",
@@ -24,9 +24,10 @@
         "attack_1",
         "attack_2",
         "attack_3",
-        "block"
+        "block",
+        "throw"
       ],
-      "sha256": "3c6a260f029fd10a708157d5cae716266a4c075405008451ffff62d24638eac7"
+      "sha256": "8798b6ca2ecce8312c439e532d7b5ed1997da2ae326d28255f8c3d87229fa5ce"
     },
     {
       "id": "player_middle",
@@ -38,7 +39,7 @@
         "w": 24,
         "h": 24
       },
-      "frameCount": 32,
+      "frameCount": 36,
       "animationNames": [
         "idle",
         "run",
@@ -47,9 +48,10 @@
         "attack_1",
         "attack_2",
         "attack_3",
-        "block"
+        "block",
+        "throw"
       ],
-      "sha256": "02b869418a81b62a9312fa393fab49619439820ae5111c3baa909597400756ee"
+      "sha256": "55d3948047435419de37fda55d3f41970ae72153ac1c9c6d89ce237ebbf949e3"
     },
     {
       "id": "player_elder",
@@ -61,7 +63,7 @@
         "w": 24,
         "h": 24
       },
-      "frameCount": 32,
+      "frameCount": 36,
       "animationNames": [
         "idle",
         "walk",
@@ -70,9 +72,10 @@
         "attack_1",
         "attack_2",
         "attack_3",
-        "block"
+        "block",
+        "cast"
       ],
-      "sha256": "49c79fc148b218e0a0b5c1a1c3abd096150c787fde013e1125d25a119ccdd324"
+      "sha256": "b8c238249a3eba8d36fa362d3c02287d0a924ed77f32bd40da768abbbc4df5dc"
     },
     {
       "id": "dog_puppy",
@@ -192,7 +195,25 @@
         "walk"
       ],
       "sha256": "7ba947bf8713d387b841369e222ec5087aa91aeb56121df48da1a7060a720b84"
+    },
+    {
+      "id": "projectiles",
+      "label": "弹道 · 粉笔 / 纸飞机 / 记忆",
+      "group": "projectile",
+      "image": "projectiles.png",
+      "atlas": "projectiles.json",
+      "frameSize": {
+        "w": 16,
+        "h": 16
+      },
+      "frameCount": 12,
+      "animationNames": [
+        "chalk",
+        "paper_plane",
+        "memory"
+      ],
+      "sha256": "0418eb1095ec61b6923aeff20c36de167f3743176e0c96556d1ec4e6e2e99c2c"
     }
   ],
-  "totalFrames": 200
+  "totalFrames": 224
 }

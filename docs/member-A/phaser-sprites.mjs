@@ -3,7 +3,7 @@
 export const characterAssetIds = Object.freeze([
   'player_youth', 'player_middle', 'player_elder',
   'dog_puppy', 'dog_adult', 'dog_elder',
-  'boss_teacher', 'boss_employer', 'boss_child',
+  'boss_teacher', 'boss_employer', 'boss_child', 'projectiles',
 ]);
 
 export function preloadCharacterAtlases(scene, assetBase = 'assets/sprites/') {
