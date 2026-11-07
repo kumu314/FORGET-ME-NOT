@@ -78,15 +78,15 @@ hero.setFlipX(true); // 原图统一面向右，向左用 flipX
 
 功能分支：`assets/member-A-char-core-atlases`；PR 目标为 `develop`，标题前缀 `[成员A]`。至少 1 名成员 approve 后才可 Squash 合并；A/B 互审资源规格。
 
-截至同步基线 68179aa，develop 尚无游戏脚手架，只有设计与协作文档，无 package.json，不能在此基线上执行 npm run dev。本批采用独立 Phaser 3.90 加载场景 + 离线预览完成验证，不声称已通过主游戏运行验收。
+截至同步基线 `b8962bd`（C 的 PR #7），develop 已包含 Phaser 3 + Vite 脚手架、`package.json` / `package-lock.json` 与主角控制器。本批资源已位于 `game/public/assets/sprites/`，可进入主工程联调；资源加载和独立预览已完成验证，但真实关卡、碰撞与手感仍需 C/D 接入后验收。
 
-## 与 C 的待审 PR #7 对接
+## 与 C 已合入的主控制器对接
 
-已只读核查 C 原分支提交 `ec9a728`，并确认替代 PR #7 的 Player 与 gameConfig 内容一致。旧 PR #5 已关闭，当前接入讨论以 #7 为准：
+C 的 PR #7 已合入 develop（`b8962bd`）。旧 PR #5 已关闭；当前接入以 develop 中的 Player、gameConfig 和动画键名契约为准：
 
-- 已按 PR #8 的路径调整请求，将全部图集移到 `game/public/assets/sprites/`；JSON 文件名引用和浏览器 URL `assets/sprites/` 保持不变。docs/member-A 留在仓库根 docs 下。合入顺序为 #7 → #8。
+- 全部图集位于 `game/public/assets/sprites/`；JSON 文件名引用和浏览器 URL `assets/sprites/` 保持不变。`docs/member-A` 留在仓库根 `docs/` 下。
 - C 的 Player 已有 `phaseId`、`facing`、`isGrounded`、`isBlocking`、`coughMs`、`hurtLockMs`、`meleeStage`、`meleeAirKick`，可映射到本批动画。资源 helper 不会自动修改 Player 的动作选择逻辑。
 - C 当前占位图使用 `setOrigin(0.5, 1)`、14×22 body、offset(5, 2)，并在阶段切换 / 复活时 setTint。接入真实图集时需检查 **1px 脚底原点差**、清除阶段 tint，并保持物理盒世界坐标稳定，不能仅替换纹理 key 后声称接入完成。
 - C 的青年近战前两段总时长为 120ms，本批预览默认 360ms；中老年的时序也不同。正式联调需按 `MELEE_CHAIN.activeAt/recover` 对齐姿态，不要直接采用预览帧率充当攻击判定时间。
 
-本批没有改 C 的 Player、配置、共享场景或待审分支；主游戏适配属于后续协调后的接入工作。
+本批没有改 C 的 Player、配置或共享场景；真实主游戏适配和动作时序对齐属于后续接入工作。
