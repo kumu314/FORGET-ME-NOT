@@ -2,6 +2,9 @@ import { computeMpCap } from './combatMath.js';
 
 export const PASSIVE_KEY = 'stage.passives';
 export const STAGE_PASSIVES = Object.freeze({
+  paperSpirit: '举一反三',
+  sleepBug: '风油精提神',
+  inspector: '广播体操',
   unreadDot: '已读不回',
   overtimeGhost: '咖啡因耐受',
   requirementVortex: '摸鱼回血',
@@ -19,6 +22,7 @@ export function grantStagePassive(player, registry, type) {
   skills.add(type);
   registry.set(PASSIVE_KEY, [...skills]);
   player.stagePassives = skills;
+  syncYouthPassives(player);
   syncPassiveMpCap(player);
   return fresh;
 }
@@ -29,13 +33,28 @@ export function syncPassiveMpCap(player) {
   player.mp = Math.min(player.mp, player.maxMp);
 }
 
+function syncYouthPassives(player) {
+  player.broadcastExercise = player.stagePassives.has('inspector');
+  player.passiveMoveMult = player.stagePassives.has('sleepBug') ? 1.15 : 1;
+  player.passiveStatusDurationMult = player.stagePassives.has('sleepBug') ? 0.5 : 1;
+}
+
+/** Only kills made with melee can trigger 举一反三; dropping it is not a retroactive proc. */
+export function recoverMeleeKillMp(player, info, random = Math.random) {
+  if (player.isDead || !STAGE_PASSIVES[info.type] || !info.isMelee || !player.stagePassives?.has('paperSpirit') || random() >= 0.25) return 0;
+  const gained = Math.max(0, Math.min(5, player.maxMp - player.mp));
+  player.mp += gained;
+  return gained;
+}
+
 export function installStagePassives(player, registry, now = () => 0) {
   player.stagePassives = new Set(registry.get(PASSIVE_KEY) ?? []);
+  syncYouthPassives(player);
   syncPassiveMpCap(player);
   player.passiveRestMs = 0;
   player.applySlow = (mult, seconds) => {
     player.stageSlowMult = mult;
-    player.stageSlowUntil = now() + seconds * 1000;
+    player.stageSlowUntil = now() + seconds * 1000 * player.passiveStatusDurationMult;
   };
   const takeDamage = player.takeDamage.bind(player);
   player.takeDamage = (damage, opts = {}) => {

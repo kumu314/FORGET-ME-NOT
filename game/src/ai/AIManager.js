@@ -12,7 +12,7 @@ import DogCompanion from './DogCompanion.js';
 import BossTeacher from './BossTeacher.js';
 import BossAdmin from './BossAdmin.js';
 import { getStageSpawns, spawnPointFor } from './StageSpawns.js';
-import { grantStagePassive } from '../entities/stagePassives.js';
+import { grantStagePassive, recoverMeleeKillMp } from '../entities/stagePassives.js';
 
 /** Boss 类型注册表：spawnBoss('teacher' | 'employer') */
 export const BossTypes = {
@@ -83,6 +83,10 @@ export class AIManager {
 
     this.onKillBound = (info) => this.onKill(info);
     scene.events.on('ai:kill', this.onKillBound, this);
+    this.onFxBound = (fx) => {
+      if (fx?.type === 'slam') this.dog?.guardExplosives(true);
+    };
+    scene.events.on('ai:fx', this.onFxBound, this);
   }
 
   /* ---------- 与成员C 的 Player 对接 ---------- */
@@ -294,6 +298,7 @@ export class AIManager {
 
   onKill(info) {
     this.exp += info.exp || 0;
+    recoverMeleeKillMp(this.player, info);
 
     const def = MONSTERS[info.type];
     if (def && def.drop) {
@@ -461,6 +466,7 @@ export class AIManager {
     this.stage = null;
     this.restorePlayerHooks();
     this.scene.events.off('ai:kill', this.onKillBound, this);
+    this.scene.events.off('ai:fx', this.onFxBound, this);
     this.bullets.clearAll();
 
     for (const m of this.monsters) {

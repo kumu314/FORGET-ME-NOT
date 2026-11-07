@@ -24,10 +24,12 @@ function scene() {
 }
 
 function monster(type) {
+  const velocity = { x: 0, y: 0 };
   return Object.assign(Object.create(MonsterTypes[type].prototype), {
     x: 100, y: 200, hp: 100, typeKey: type, def: MONSTERS[type], scene: scene(),
+    homeX: 100, homeY: 200, patrolDir: 1,
     player: { x: 105, y: 200, mp: 50, takeDamage: vi.fn() },
-    body: { setVelocityX: vi.fn(), setVelocityY: vi.fn(), blocked: {} },
+    body: { velocity, setVelocityX: vi.fn((x) => { velocity.x = x; }), setVelocityY: vi.fn(), blocked: {} },
     setVisible: vi.fn(), setFlipX: vi.fn(), setTint: vi.fn(), clearTint: vi.fn(),
     flashHit: vi.fn(), die: vi.fn(), hover: vi.fn(),
   });

@@ -24,7 +24,8 @@ export function installJuice(scene) {
   if (scene._juiceInstalled) return;
   scene._juiceInstalled = true;
 
-  let lastHitStop = 0;
+  let lastHitStop = -Infinity;
+  let hitStopTimer = null;
   const lastShake = {};
 
   const shake = (tier) => {
@@ -42,19 +43,29 @@ export function installJuice(scene) {
     const world = scene.physics?.world;
     if (!world) return;
     world.timeScale = JUICE.hitStopTimeScale;
-    scene.time.delayedCall(JUICE.hitStopMs, () => {
+    hitStopTimer = scene.time.delayedCall(JUICE.hitStopMs, () => {
       world.timeScale = 1;
+      hitStopTimer = null;
     });
   };
 
-  scene.events.on('ai:damage', onDamage);
-  scene.events.on('player:damaged', () => shake('playerHurt'));
-  scene.events.on('ai:fx', (fx) => {
+  const onPlayerDamaged = () => shake('playerHurt');
+  const onFx = (fx) => {
     if (fx?.type === 'stomp' || fx?.type === 'explode') shake('heavy');
-  });
-  scene.events.on('ai:boss:phase', () => shake('bossPhase'));
+  };
+  const onBossPhase = () => shake('bossPhase');
+  scene.events.on('ai:damage', onDamage);
+  scene.events.on('player:damaged', onPlayerDamaged);
+  scene.events.on('ai:fx', onFx);
+  scene.events.on('ai:boss:phase', onBossPhase);
   scene.events.once('shutdown', () => {
     scene.events.off('ai:damage', onDamage);
+    scene.events.off('player:damaged', onPlayerDamaged);
+    scene.events.off('ai:fx', onFx);
+    scene.events.off('ai:boss:phase', onBossPhase);
+    hitStopTimer?.remove(false);
+    hitStopTimer = null;
+    scene._juiceInstalled = false;
     if (scene.physics?.world) scene.physics.world.timeScale = 1;
   });
 }

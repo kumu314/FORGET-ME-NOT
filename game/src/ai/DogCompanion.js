@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DOG, DOG_FORM_BY_LEVEL, REGISTRY_KEYS } from '../config/aiConfig.js';
+import { AI, DOG, DOG_FORM_BY_LEVEL, REGISTRY_KEYS } from '../config/aiConfig.js';
 import { playAnim } from './anim.js';
 
 /**
@@ -79,6 +79,7 @@ export class DogCompanion extends Phaser.Physics.Arcade.Sprite {
 
   update(time, delta) {
     this.updateFollow(delta);
+    this.guardExplosives();
     this.updateHealAura(time);
     this.updateIntercept(time);
   }
@@ -221,10 +222,29 @@ export class DogCompanion extends Phaser.Physics.Arcade.Sprite {
 
   /* ---------- 光环 & 弹幕拦截 ---------- */
 
+  /** 成年狗主动清除包围主角的红点和接近的公章冲击波。沿用既有guardRange。 */
+  guardExplosives(stamp = false) {
+    if (this.form !== 'adult' || this.player.isDead || !this.def.guardRange) return;
+    const p = this.player;
+    const nearby = (target) => Phaser.Math.Distance.Between(p.x, p.y, target.x, target.y) <= this.def.guardRange;
+    const dots = this.ai.aliveMonsters().filter((m) => m.typeKey === 'unreadDot' && nearby(m));
+    const waves = this.ai.bullets.ofFaction('enemy').filter((b) => b.source === 'shockwave' && nearby(b));
+    if (!stamp && dots.length < 2 && !waves.length) return;
+    if (!dots.length && !waves.length) return;
+    for (const dot of dots) dot.defuse();
+    for (const wave of waves) this.ai.bullets.release(wave);
+    this.setAction('bark', true);
+    this.scene.events.emit('ai:dog:bark', { x: this.x, y: this.y - 6 });
+    this.scene.events.emit('ai:dog:intercept', { x: p.x, y: p.y });
+  }
+
   updateHealAura(time) {
     const p = this.player;
     if (p.isDead) return;
     if (time - (this.ai.lastPlayerDamageAt || 0) < 3000) return; // 未脱战
+    if (!p.isGrounded || Math.abs(p.body.velocity.x) >= 1 || p._inRecovery || p.rangedActionMs > 0) return;
+    if (this.ai.activeBoss() || this.ai.aliveMonsters().some((m) =>
+      Phaser.Math.Distance.Between(p.x, p.y, m.x, m.y) < AI.detectRange)) return;
     if (time < this.nextHealAt) return;
 
     this.nextHealAt = time + this.def.healInterval * 1000;

@@ -138,6 +138,20 @@ export class MonsterFSM extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
+  /** Custom movement still uses the same acquisition/leash hysteresis as the FSM. */
+  trackCustomTarget(dist) {
+    if (!this.player || this.player.isDead || dist > AI.leashRange) {
+      this.state = 'PATROL';
+      if (this.def.flying) this.baseY = this.homeY;
+      return false;
+    }
+    if (this.state === 'CHASE' || dist < AI.detectRange) {
+      this.state = 'CHASE';
+      return true;
+    }
+    return false;
+  }
+
   patrol(dt) {
     const speed = this.def.patrolSpeed || 24;
     this.body.setVelocityX(this.patrolDir * speed);
@@ -238,7 +252,7 @@ export class MonsterFSM extends Phaser.Physics.Arcade.Sprite {
       type: this.typeKey,
     });
 
-    if (this.hp <= 0) this.die();
+    if (this.hp <= 0) this.die(opts);
     return dmg;
   }
 
@@ -274,7 +288,7 @@ export class MonsterFSM extends Phaser.Physics.Arcade.Sprite {
     this.setTint(0xaad4ff);
   }
 
-  die() {
+  die(opts = {}) {
     if (this.dead) return;
     this.dead = true;
     this.body.enable = false;
@@ -285,6 +299,7 @@ export class MonsterFSM extends Phaser.Physics.Arcade.Sprite {
       x: this.x,
       y: this.y,
       exp: this.def.exp || 0,
+      isMelee: !!opts.isMelee,
     });
     this.scene.tweens.add({
       targets: this,
@@ -494,13 +509,13 @@ class OvertimeGhost extends MonsterFSM {
   behavior(time, dt) {
     if (this.dead) return;
     const p = this.player;
-    if (p && !p.isDead) {
+    const dist = p ? Phaser.Math.Distance.Between(this.x, this.y, p.x, p.y) : Infinity;
+    if (this.trackCustomTarget(dist)) {
       const dir = Math.sign(p.x - this.x) || this.facing;
       this.facing = dir;
       this.body.setVelocityX(dir * this.def.chaseSpeed);
       this.setFlipX(dir < 0);
 
-      const dist = Phaser.Math.Distance.Between(this.x, this.y, p.x, p.y);
       if (dist < this.def.drainRange) {
         p.mp = Math.max(0, p.mp - this.def.drainMpPerSec * dt);
         if (time > this.drainFxAt) {
@@ -525,18 +540,18 @@ class RequirementVortex extends MonsterFSM {
 
   behavior(time, dt) {
     if (this.dead) return;
-    this.hover(dt);
 
     const p = this.player;
-    if (p && !p.isDead) {
-      const dist = Phaser.Math.Distance.Between(this.x, this.y, p.x, p.y);
+    const dist = p ? Phaser.Math.Distance.Between(this.x, this.y, p.x, p.y) : Infinity;
+    if (this.trackCustomTarget(dist)) {
+      this.hover(dt);
       const dir = Math.sign(p.x - this.x) || this.facing;
       this.facing = dir;
       const vx = dist > 55 ? this.def.chaseSpeed : -this.def.chaseSpeed;
       this.body.setVelocityX(dir * vx);
       this.setFlipX(dir < 0);
     } else {
-      this.body.setVelocityX(0);
+      this.patrol(dt);
     }
 
     if (!this.shieldActive && time >= this.shieldRestoreAt) {
