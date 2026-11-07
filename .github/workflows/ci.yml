@@ -1,0 +1,38 @@
+name: ci
+
+# 门禁范围：凡是动了 game/** 的 PR 与主干推送，都必须过 测试+构建。
+# 现阶段为"咨询性"检查（未加入 develop 的 required checks）——
+# 待 PR #7/#8 合并、脚手架稳定后，再把 `ci / build-test` 设为 develop 的必需检查。
+
+on:
+  pull_request:
+    paths:
+      - 'game/**'
+  push:
+    branches: [main, develop]
+    paths:
+      - 'game/**'
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: game
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: game/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests (vitest)
+        run: npm test
+
+      - name: Production build (vite)
+        run: npm run build
