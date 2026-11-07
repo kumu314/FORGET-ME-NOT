@@ -1,0 +1,263 @@
+{
+  "generatedBy": "tools/import_sfx.py",
+  "notes": "来自本地《Y 游戏音效素材库 / 游戏动画音效全集》(用户提供)。已做柔和化处理（8kHz 低通、RMS 统一响度、tanh 软削波、6ms 淡入/25ms 淡出）。商用/公开发布前请确认该素材库授权协议。",
+  "format": "mono / 22050Hz / 16-bit PCM",
+  "files": [
+    {
+      "key": "hit",
+      "file": "sfx_hit.wav",
+      "source": "游戏动画音效全集/通用动作/01人物/03武术动作类/空拳打斗/有力量的拳击－xh20070510.wav",
+      "duration": 0.6,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "hit_heavy",
+      "file": "sfx_hit_heavy.wav",
+      "source": "游戏动画音效全集/通用动作/05冷兵器/棍棒类/棍棒击中-YS070518.wav",
+      "duration": 0.294,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "crit",
+      "file": "sfx_crit.wav",
+      "source": "游戏动画音效全集/通用动作/01人物/03武术动作类/空拳打斗/赤手空拳击中肉体－高频5-YS070524.wav",
+      "duration": 0.7,
+      "sourceRate": 44100,
+      "sourceChannels": 2
+    },
+    {
+      "key": "hurt",
+      "file": "sfx_hurt.wav",
+      "source": "游戏动画音效全集/人声采集素材/男4普通型薛云升采集/xys受伤1.wav",
+      "duration": 0.24,
+      "sourceRate": 44100,
+      "sourceChannels": 1
+    },
+    {
+      "key": "death",
+      "file": "sfx_death.wav",
+      "source": "游戏动画音效全集/通用动作/01人物/02普通动作类/死亡倒地zth070522.wav",
+      "duration": 1.967,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "block",
+      "file": "sfx_block.wav",
+      "source": "游戏动画音效全集/interface 界面/刀打盾上的声音－xh20070419.wav",
+      "duration": 0.443,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "jump",
+      "file": "sfx_jump.wav",
+      "source": "游戏动画音效全集/通用动作/01人物/02普通动作类/跳跃-LTT20070511.wav",
+      "duration": 0.733,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "land",
+      "file": "sfx_land.wav",
+      "source": "游戏动画音效全集/通用动作/01人物/01移动状态/落地2zth070521.wav",
+      "duration": 0.647,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "footstep",
+      "file": "sfx_footstep.wav",
+      "source": "游戏动画音效全集/通用动作/01人物/01移动状态/01硬地面/脚步-WQ20070419.wav",
+      "duration": 0.154,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "throw",
+      "file": "sfx_throw.wav",
+      "source": "游戏动画音效全集/技能音效/07风类/风-短6-ltt20070419.wav",
+      "duration": 0.5,
+      "sourceRate": 44100,
+      "sourceChannels": 1
+    },
+    {
+      "key": "magic",
+      "file": "sfx_magic.wav",
+      "source": "游戏动画音效全集/技能音效/08光/光魔法、带气流声1-xys20070511.wav",
+      "duration": 1.445,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "bark",
+      "file": "sfx_bark.wav",
+      "source": "游戏动画音效全集/通用动作/02动物/03中型动物/叫声/狗叫1－xh20070511.wav",
+      "duration": 0.734,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "bark_attack",
+      "file": "sfx_bark_attack.wav",
+      "source": "游戏动画音效全集/通用动作/02动物/03中型动物/叫声/狗扑－xh20070511.wav",
+      "duration": 0.849,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "dog_hurt",
+      "file": "sfx_dog_hurt.wav",
+      "source": "游戏动画音效全集/通用动作/02动物/03中型动物/叫声/狗受伤-WQ20070511.wav",
+      "duration": 0.301,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "pickup",
+      "file": "sfx_pickup.wav",
+      "source": "游戏动画音效全集/interface 界面/PickUp/捡起/捡起铃铛－xh20070419.wav",
+      "duration": 0.327,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "bell",
+      "file": "sfx_bell.wav",
+      "source": "游戏动画音效全集/interface 界面/结束的钟声－xh20070419.wav",
+      "duration": 2.698,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "thunder",
+      "file": "sfx_thunder.wav",
+      "source": "游戏动画音效全集/环境音效/05雷电/下雨+雷电-xys20070423.wav",
+      "duration": 8.0,
+      "sourceRate": 22050,
+      "sourceChannels": 2
+    },
+    {
+      "key": "rain",
+      "file": "sfx_rain.wav",
+      "source": "游戏动画音效全集/环境音效/01水/08雨水/连续不断的雨声-xys20070423.wav",
+      "duration": 4.412,
+      "sourceRate": 22050,
+      "sourceChannels": 2
+    },
+    {
+      "key": "egg",
+      "file": "sfx_egg.wav",
+      "source": "游戏动画音效全集/乐器类/重大事件短旋律－宏大/重大场面-铜管-短1-mcx20070511.wav",
+      "duration": 2.5,
+      "sourceRate": 44100,
+      "sourceChannels": 2
+    },
+    {
+      "key": "victory",
+      "file": "sfx_victory.wav",
+      "source": "游戏动画音效全集/乐器类/骑兵号-胜利-mcx20070511.wav",
+      "duration": 2.847,
+      "sourceRate": 44100,
+      "sourceChannels": 2
+    },
+    {
+      "key": "typing",
+      "file": "sfx_typing.wav",
+      "source": "游戏动画音效全集/interface 界面/敲击键盘/敲击键盘03YS20070419.wav",
+      "duration": 0.14,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "ui",
+      "file": "sfx_ui.wav",
+      "source": "游戏动画音效全集/interface 界面/按钮类1－mcx20070509.wav",
+      "duration": 0.109,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "checkpoint",
+      "file": "sfx_checkpoint.wav",
+      "source": "游戏动画音效全集/interface 界面/信息提示1-xys20070413.wav",
+      "duration": 0.208,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "paper",
+      "file": "sfx_paper.wav",
+      "source": "游戏动画音效全集/interface 界面/翻页1－xh20070419.wav",
+      "duration": 0.586,
+      "sourceRate": 44100,
+      "sourceChannels": 1
+    },
+    {
+      "key": "door",
+      "file": "sfx_door.wav",
+      "source": "游戏动画音效全集/环境音效/11房屋/门窗类mcx20070418/巨大、沉重的开门声-xys20070423.wav",
+      "duration": 3.0,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "boss_roar",
+      "file": "sfx_boss_roar.wav",
+      "source": "游戏动画音效全集/通用动作/03怪物/04巨型怪物/叫声/巨怪咆哮-好-LTT20070518.wav",
+      "duration": 4.0,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "boss_warn",
+      "file": "sfx_boss_warn.wav",
+      "source": "游戏动画音效全集/通用动作/03怪物/04巨型怪物/叫声/警告1-xys20070423.wav",
+      "duration": 0.953,
+      "sourceRate": 44100,
+      "sourceChannels": 1
+    },
+    {
+      "key": "boss_enter",
+      "file": "sfx_boss_enter.wav",
+      "source": "游戏动画音效全集/乐器类/重大事件短旋律－宏大/warwarning.wav",
+      "duration": 2.5,
+      "sourceRate": 44100,
+      "sourceChannels": 2
+    },
+    {
+      "key": "transition",
+      "file": "sfx_transition.wav",
+      "source": "游戏动画音效全集/技能音效/07风类/风-阵风-LTT20070522.wav",
+      "duration": 2.5,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "heal",
+      "file": "sfx_heal.wav",
+      "source": "游戏动画音效全集/技能音效/18治愈系/补血之光－xh20070516.wav",
+      "duration": 2.0,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "mp_up",
+      "file": "sfx_mp_up.wav",
+      "source": "游戏动画音效全集/技能音效/08光/小光-xys20070508.wav",
+      "duration": 1.125,
+      "sourceRate": 22050,
+      "sourceChannels": 1
+    },
+    {
+      "key": "mp_down",
+      "file": "sfx_mp_down.wav",
+      "source": "游戏动画音效全集/interface 界面/提示音-声音较暗-mcx20070511.wav",
+      "duration": 0.6,
+      "sourceRate": 44100,
+      "sourceChannels": 2
+    }
+  ]
+}

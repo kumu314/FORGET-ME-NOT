@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "status": "ranged-draft-v1",
+  "owner": "member-A",
+  "facing": "right",
+  "filter": "nearest",
+  "assets": [
+    {
+      "id": "player_youth",
+      "label": "青年 · 放学以后",
+      "group": "player",
+      "image": "player_youth.png",
+      "atlas": "player_youth.json",
+      "frameSize": {
+        "w": 24,
+        "h": 24
+      },
+      "frameCount": 36,
+      "animationNames": [
+        "idle",
+        "run",
+        "jump",
+        "hurt",
+        "attack_1",
+        "attack_2",
+        "attack_3",
+        "block",
+        "throw"
+      ],
+      "sha256": "8798b6ca2ecce8312c439e532d7b5ed1997da2ae326d28255f8c3d87229fa5ce"
+    },
+    {
+      "id": "player_middle",
+      "label": "中年 · 雨夜归途",
+      "group": "player",
+      "image": "player_middle.png",
+      "atlas": "player_middle.json",
+      "frameSize": {
+        "w": 24,
+        "h": 24
+      },
+      "frameCount": 36,
+      "animationNames": [
+        "idle",
+        "run",
+        "jump",
+        "hurt",
+        "attack_1",
+        "attack_2",
+        "attack_3",
+        "block",
+        "throw"
+      ],
+      "sha256": "55d3948047435419de37fda55d3f41970ae72153ac1c9c6d89ce237ebbf949e3"
+    },
+    {
+      "id": "player_elder",
+      "label": "老年 · 拐杖与回声",
+      "group": "player",
+      "image": "player_elder.png",
+      "atlas": "player_elder.json",
+      "frameSize": {
+        "w": 24,
+        "h": 24
+      },
+      "frameCount": 36,
+      "animationNames": [
+        "idle",
+        "walk",
+        "cough",
+        "hurt",
+        "attack_1",
+        "attack_2",
+        "attack_3",
+        "block",
+        "cast"
+      ],
+      "sha256": "b8c238249a3eba8d36fa362d3c02287d0a924ed77f32bd40da768abbbc4df5dc"
+    },
+    {
+      "id": "dog_puppy",
+      "label": "阿黄 · 初遇",
+      "group": "companion",
+      "image": "dog_puppy.png",
+      "atlas": "dog_puppy.json",
+      "frameSize": {
+        "w": 12,
+        "h": 12
+      },
+      "frameCount": 16,
+      "animationNames": [
+        "idle",
+        "run",
+        "pounce",
+        "bark",
+        "bite"
+      ],
+      "sha256": "84e9efb98e0b72ec5ec79a812da3b6f0b4be807aea398858aa94fb090c49e4b5"
+    },
+    {
+      "id": "dog_adult",
+      "label": "阿黄 · 陪伴",
+      "group": "companion",
+      "image": "dog_adult.png",
+      "atlas": "dog_adult.json",
+      "frameSize": {
+        "w": 20,
+        "h": 16
+      },
+      "frameCount": 16,
+      "animationNames": [
+        "idle",
+        "run",
+        "pounce",
+        "bark",
+        "bite"
+      ],
+      "sha256": "b4a5647d04bc6f0f7bfc4641384606bb316bcacaf3583bfb2c80c997490e9345"
+    },
+    {
+      "id": "dog_elder",
+      "label": "阿黄 · 相守",
+      "group": "companion",
+      "image": "dog_elder.png",
+      "atlas": "dog_elder.json",
+      "frameSize": {
+        "w": 20,
+        "h": 16
+      },
+      "frameCount": 16,
+      "animationNames": [
+        "idle",
+        "walk",
+        "pounce",
+        "bark",
+        "bite"
+      ],
+      "sha256": "1265378f599b83071bf9d4f0e2b621dfacff7491c01514ba88be782bef673def"
+    },
+    {
+      "id": "boss_teacher",
+      "label": "班主任 · 倒计时",
+      "group": "boss",
+      "image": "boss_teacher.png",
+      "atlas": "boss_teacher.json",
+      "frameSize": {
+        "w": 64,
+        "h": 64
+      },
+      "frameCount": 24,
+      "animationNames": [
+        "idle",
+        "sweep",
+        "throw_chalk",
+        "summon",
+        "enraged",
+        "hurt"
+      ],
+      "sha256": "eeaa429d1a91b5d153d3e4e4b6ec0b24c7cd905b787d7f67b7250e81253b7b74"
+    },
+    {
+      "id": "boss_employer",
+      "label": "老板 · 黄金暴君",
+      "group": "boss",
+      "image": "boss_employer.png",
+      "atlas": "boss_employer.json",
+      "frameSize": {
+        "w": 64,
+        "h": 64
+      },
+      "frameCount": 24,
+      "animationNames": [
+        "idle",
+        "slam",
+        "smoke",
+        "envelopes",
+        "enraged",
+        "hurt"
+      ],
+      "sha256": "8594420084eb31a18ed4ecc7db83f0ff56738e7437e1db2873844ce573e1615c"
+    },
+    {
+      "id": "boss_child",
+      "label": "孩子 · 远行的人",
+      "group": "boss",
+      "image": "boss_child.png",
+      "atlas": "boss_child.json",
+      "frameSize": {
+        "w": 48,
+        "h": 48
+      },
+      "frameCount": 8,
+      "animationNames": [
+        "idle",
+        "walk"
+      ],
+      "sha256": "7ba947bf8713d387b841369e222ec5087aa91aeb56121df48da1a7060a720b84"
+    },
+    {
+      "id": "projectiles",
+      "label": "弹道 · 粉笔 / 纸飞机 / 记忆",
+      "group": "projectile",
+      "image": "projectiles.png",
+      "atlas": "projectiles.json",
+      "frameSize": {
+        "w": 16,
+        "h": 16
+      },
+      "frameCount": 12,
+      "animationNames": [
+        "chalk",
+        "paper_plane",
+        "memory"
+      ],
+      "sha256": "0418eb1095ec61b6923aeff20c36de167f3743176e0c96556d1ec4e6e2e99c2c"
+    }
+  ],
+  "totalFrames": 224
+}

@@ -1,0 +1,474 @@
+{
+  "frames": {
+    "idle_0": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 220
+    },
+    "idle_1": {
+      "frame": {
+        "x": 20,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 220
+    },
+    "idle_2": {
+      "frame": {
+        "x": 40,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 220
+    },
+    "idle_3": {
+      "frame": {
+        "x": 60,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 220
+    },
+    "run_0": {
+      "frame": {
+        "x": 0,
+        "y": 16,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 100
+    },
+    "run_1": {
+      "frame": {
+        "x": 20,
+        "y": 16,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 100
+    },
+    "run_2": {
+      "frame": {
+        "x": 40,
+        "y": 16,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 100
+    },
+    "run_3": {
+      "frame": {
+        "x": 60,
+        "y": 16,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 100
+    },
+    "pounce_0": {
+      "frame": {
+        "x": 0,
+        "y": 32,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 100
+    },
+    "pounce_1": {
+      "frame": {
+        "x": 20,
+        "y": 32,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 100
+    },
+    "pounce_2": {
+      "frame": {
+        "x": 40,
+        "y": 32,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 100
+    },
+    "pounce_3": {
+      "frame": {
+        "x": 60,
+        "y": 32,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 100
+    },
+    "bark_0": {
+      "frame": {
+        "x": 0,
+        "y": 48,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 120
+    },
+    "bark_1": {
+      "frame": {
+        "x": 20,
+        "y": 48,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 120
+    },
+    "bark_2": {
+      "frame": {
+        "x": 40,
+        "y": 48,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 120
+    },
+    "bark_3": {
+      "frame": {
+        "x": 60,
+        "y": 48,
+        "w": 20,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 20,
+        "h": 16
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9375
+      },
+      "duration": 120
+    }
+  },
+  "meta": {
+    "app": "Forget Me Not / member A",
+    "version": "1",
+    "image": "dog_adult.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 80,
+      "h": 64
+    },
+    "scale": "1"
+  },
+  "game": {
+    "id": "dog_adult",
+    "status": "integration-draft-v1",
+    "facing": "right",
+    "anchor": {
+      "x": 10,
+      "y": 15
+    },
+    "animations": {
+      "idle": {
+        "frames": [
+          "idle_0",
+          "idle_1",
+          "idle_2",
+          "idle_3"
+        ],
+        "frameRate": 4.545454545454546,
+        "repeat": -1
+      },
+      "run": {
+        "frames": [
+          "run_0",
+          "run_1",
+          "run_2",
+          "run_3"
+        ],
+        "frameRate": 10,
+        "repeat": -1
+      },
+      "pounce": {
+        "frames": [
+          "pounce_0",
+          "pounce_1",
+          "pounce_2",
+          "pounce_3"
+        ],
+        "frameRate": 10,
+        "repeat": 0
+      },
+      "bark": {
+        "frames": [
+          "bark_0",
+          "bark_1",
+          "bark_2",
+          "bark_3"
+        ],
+        "frameRate": 8.333333333333334,
+        "repeat": 0
+      },
+      "bite": {
+        "frames": [
+          "pounce_2",
+          "pounce_3"
+        ],
+        "frameRate": 8,
+        "repeat": -1
+      }
+    }
+  }
+}

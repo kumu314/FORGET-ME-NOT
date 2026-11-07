@@ -1,0 +1,663 @@
+/**
+ * 主角控制器（成员C：主角操控 / 动作物理 / 机能演变）
+ *
+ * 继承 Phaser.Physics.Arcade.Sprite，负责：
+ *  1. 极简操作：A/D 移动、Space 跳跃、S 下蹲格挡（免伤 70%）
+ *  2. 战斗判定：J 近战三连击、L 远程投掷、Space+J 空中飞踢、Space+L 空中投掷
+ *  3. 生命周期数值：青年 200/50 回2s → 中年 120/100 回5s → 老年 50/200 回12s
+ *  4. 老年机能剥夺：锁定跳跃，按 Space 只播放咳嗽微动作，离地为 0
+ *
+ * 美术资源（成员A）就位前，这里用 setTint / 内置矩形纹理做占位，接口不变。
+ */
+
+import Phaser from 'phaser';
+import {
+  COMBAT,
+  LEVEL_UPGRADES,
+  LIFE_PHASES,
+  LIFECYCLE,
+  MELEE_CHAIN,
+  PHYSICS,
+  RANGED_COOLDOWN,
+  RANGED_COST,
+} from '../config/gameConfig.js';
+import {
+  getAnimationKey,
+  getPlayerAtlasId,
+  hasReadyAnimation,
+} from '../scenes/spriteAtlases.js';
+import {
+  applyDamage,
+  canJump,
+  canStartMelee,
+  canStartRanged,
+  computeGravityScale,
+  computeMeleeDamage,
+  computeMoveSpeed,
+  computeMpCap,
+  computeMpRegen,
+  nextComboStage,
+  resolveIncomingDamage,
+  resolveJumpKeyAction,
+  respawnState,
+  rollCrit,
+  tickMp,
+  trySpendMp,
+} from './combatMath.js';
+
+export function selectPlayerAnimation({
+  phaseId,
+  grounded,
+  moving,
+  blocking,
+  hurt,
+  coughing,
+  meleeStage,
+  rangedAction,
+}) {
+  if (hurt) return 'hurt';
+  if (coughing) return 'cough';
+  if (rangedAction) return phaseId === 'elder' ? 'cast' : 'throw';
+  if (meleeStage > 0) return `attack_${meleeStage}`;
+  if (blocking) return 'block';
+  if (!grounded) return phaseId === 'elder' ? 'walk' : 'jump';
+  if (moving) return phaseId === 'elder' ? 'walk' : 'run';
+  return 'idle';
+}
+
+export default class Player extends Phaser.Physics.Arcade.Sprite {
+  /**
+   * @param {import('phaser').Scene} scene
+   * @param {number} x
+   * @param {number} y
+   * @param {{phase?: 'youth'|'middle'|'elder'}} [opts]
+   */
+  constructor(scene, x, y, opts = {}) {
+    const phaseId = opts.phase ?? 'youth';
+    const atlasId = getPlayerAtlasId(phaseId);
+    const hasAtlas = scene.textures.exists(atlasId);
+    const textureKey = hasAtlas ? atlasId : Player.ensurePlaceholderTexture(scene);
+    super(scene, x, y, textureKey, hasAtlas ? 'idle_0' : undefined);
+
+    scene.add.existing(this);
+    scene.physics.add.existing(this);
+
+    // 图集 pivot 为 (12, 23)：保留最后一排透明安全边，物理底边与脚底对齐。
+    this.setOrigin(0.5, 23 / 24);
+    this.body.setSize(14, 21);
+    this.body.setOffset(5, 2);
+    this.setCollideWorldBounds(true);
+    this.setMaxVelocity(400, PHYSICS.maxFallSpeed);
+    this.body.setGravityY(PHYSICS.gravityY);
+
+    /** @type {keyof typeof LIFECYCLE} */
+    this.phaseId = phaseId;
+    this.phase = LIFECYCLE[this.phaseId];
+
+    this.facing = 1;
+    this.standardAnswer = false; // 【标准答案】彩蛋 Buff
+    this.loveLetter = false; // 【怦然心动】彩蛋 Buff（近战伤害 +25%，issue #16）
+    this.broadcastExercise = false; // 【广播体操】被动：格挡减免 70→85%
+
+    // —— 升级强化（issue #17，GDD §3.1）——
+    this.attackLevels = 0; // 攻击力强化级数
+    this.critChance = 0; // 近战暴击率
+    this.hangLevels = 0; // 跳跃滞空强化级数（重力缩放）
+
+    const maxMp = computeMpCap(this.phase, { standardAnswer: this.standardAnswer });
+    this.hp = this.phase.hp;
+    this.mp = maxMp;
+    this.maxHp = this.phase.hp;
+    this.maxMp = maxMp;
+
+    // —— 计时器（毫秒）——
+    this.invulnMs = 0;
+    this.hurtLockMs = 0;
+    this.coyoteLeftMs = 0;
+    this.jumpBufferMs = 0;
+    this.blockHeldForMs = 0;
+    this.coughMs = 0;
+    /** 格挡成功时，下一次"按 S 起跳/移动"的放行标记（保留扩展） */
+    this.blockedThisFrame = false;
+
+    // —— 近战状态机 ——
+    this.meleeStage = 0;
+    this._inRecovery = false;
+    this.meleeElapsedMs = 0;
+    this.meleeHitDone = false;
+    this.comboSinceActiveMs = Number.POSITIVE_INFINITY;
+    /** 空中飞踢每次腾空只允许触发一次 */
+    this._airKickFired = false;
+
+    // —— 远程 ——
+    this.rangedCooldownMs = 0;
+    this.rangedLatch = false;
+    this.rangedActionMs = 0;
+
+    // —— 复活 ——
+    this.spawnPoint = { x, y };
+    this.isDead = false;
+
+    /** @type {Phaser.GameObjects.Rectangle|null} 近战判定框（调试可视化） */
+    this.meleeHitboxDebug = null;
+    /** 外部可注入的回调：由场景/AI 对接伤害结算与音效 */
+    this.eventsHooks = {
+      onMeleeHit: opts.onMeleeHit ?? null,
+      onRangedFire: opts.onRangedFire ?? null,
+      onCough: opts.onCough ?? null,
+      onDeath: opts.onDeath ?? null,
+      onDamaged: opts.onDamaged ?? null,
+    };
+
+    this._applyPhaseTexture();
+    this._syncAnimation();
+  }
+
+  /** 无美术资源时生成 24×24 的占位纹理，只生成一次 */
+  static ensurePlaceholderTexture(scene) {
+    const key = 'memberC_player_placeholder';
+    if (!scene.textures.exists(key)) {
+      const g = scene.make.graphics({ x: 0, y: 0, add: false });
+      g.fillStyle(0xffffff, 1).fillRect(0, 0, 24, 24);
+      g.lineStyle(2, 0x1b1b25, 1).strokeRect(1, 1, 22, 22);
+      g.generateTexture(key, 24, 24);
+      g.destroy();
+    }
+    return key;
+  }
+
+  // ==========================================================
+  // 阶段切换（关卡衔接时由场景调用）
+  // ==========================================================
+
+  /**
+   * 切换生命周期阶段：重置上限并按新阶段回满，位置与检查点同步更新。
+   * @param {'youth'|'middle'|'elder'} phaseId
+   * @param {{refill?: boolean, spawn?: {x:number,y:number}}} [opts]
+   */
+  setPhase(phaseId, opts = {}) {
+    if (!LIFE_PHASES.includes(phaseId)) {
+      throw new Error(`未知阶段: ${phaseId}`);
+    }
+    this.phaseId = phaseId;
+    this.phase = LIFECYCLE[phaseId];
+    this.maxHp = this.phase.hp;
+    this.maxMp = computeMpCap(this.phase, { standardAnswer: this.standardAnswer });
+
+    if (opts.refill !== false) {
+      this.hp = this.maxHp;
+      this.mp = this.maxMp;
+    } else {
+      this.hp = Math.min(this.hp, this.maxHp);
+      this.mp = Math.min(this.mp, this.maxMp);
+    }
+
+    this._applyPhaseTexture();
+    this.meleeStage = 0;
+    if (opts.spawn) this.setSpawnPoint(opts.spawn.x, opts.spawn.y);
+    this._syncAnimation();
+    return this;
+  }
+
+  get canJumpNow() {
+    return this.phase.canJump;
+  }
+
+  get isGrounded() {
+    return this.body.blocked.down || this.body.touching.down;
+  }
+
+  get isBlocking() {
+    return this.blockHeldForMs > 0;
+  }
+
+  setSpawnPoint(x, y) {
+    this.spawnPoint = { x, y };
+  }
+
+  /** 获得【标准答案】彩蛋增益 */
+  grantStandardAnswer() {
+    this.standardAnswer = true;
+    this.maxMp = computeMpCap(this.phase, { standardAnswer: true });
+    this.mp = this.maxMp;
+    return this;
+  }
+
+  /** 获得【怦然心动】彩蛋增益（近战伤害 +25%） */
+  grantLoveLetter() {
+    this.loveLetter = true;
+    return this;
+  }
+
+  /**
+   * 应用升级强化（issue #17 三选一，由 XpSystem 调用）
+   * @param {'attack'|'crit'|'hang'} id
+   */
+  applyLevelUpgrade(id) {
+    if (id === 'attack') {
+      this.attackLevels = Math.min(LEVEL_UPGRADES.attack.maxLevels, this.attackLevels + 1);
+    } else if (id === 'crit') {
+      this.critChance = Math.min(
+        LEVEL_UPGRADES.crit.critCap,
+        this.critChance + LEVEL_UPGRADES.crit.critGain,
+      );
+    } else if (id === 'hang') {
+      this.hangLevels = Math.min(LEVEL_UPGRADES.hang.maxLevels, this.hangLevels + 1);
+      this._applyGravityScale();
+    }
+    return this;
+  }
+
+  /** 跳跃滞空强化：整段腾空重力缩放（老年禁跳不受影响，重力只作用于腾空段） */
+  _applyGravityScale() {
+    this.body?.setGravityY(PHYSICS.gravityY * computeGravityScale(this.hangLevels));
+  }
+
+  // ==========================================================
+  // 每帧更新
+  // ==========================================================
+
+  /**
+   * @param {number} delta 毫秒
+   * @param {ReturnType<import('../core/Input.js').createIdleState>} input
+   */
+  update(delta, input) {
+    this._tickTimers(delta);
+
+    if (this.isDead) {
+      this.setVelocityX(0);
+      this._syncAnimation();
+      return;
+    }
+
+    this._tickMp(delta);
+    this._tickBlock(delta, input);
+    this._handleHorizontal(delta, input);
+    this._handleJump(input, delta);
+    this._handleMelee(input);
+    this._handleRanged(input);
+    this._tickMelee(delta);
+    this._syncAnimation();
+  }
+
+  _tickTimers(delta) {
+    this.invulnMs = Math.max(0, this.invulnMs - delta);
+    this.hurtLockMs = Math.max(0, this.hurtLockMs - delta);
+    this.jumpBufferMs = Math.max(0, this.jumpBufferMs - delta);
+    this.rangedCooldownMs = Math.max(0, this.rangedCooldownMs - delta);
+    this.rangedActionMs = Math.max(0, this.rangedActionMs - delta);
+    this.coughMs = Math.max(0, this.coughMs - delta);
+    this.comboSinceActiveMs = Math.min(Number.POSITIVE_INFINITY, this.comboSinceActiveMs + delta);
+
+    if (this.isGrounded) {
+      this.coyoteLeftMs = PHYSICS.coyoteMs;
+    } else {
+      this.coyoteLeftMs = Math.max(0, this.coyoteLeftMs - delta);
+    }
+
+    // 无敌帧闪烁
+    this.setAlpha(this.invulnMs > 0 && Math.floor(this.invulnMs / 90) % 2 === 0 ? 0.45 : 1);
+  }
+
+  _tickMp(delta) {
+    const regen = computeMpRegen(this.phase, { standardAnswer: this.standardAnswer });
+    this.mp = tickMp(this.mp, this.maxMp, regen, delta);
+  }
+
+  _tickBlock(delta, input) {
+    const grounded = this.isGrounded;
+    const wantBlock = Boolean(input.blockHeld) && grounded && this.hurtLockMs <= 0;
+    if (wantBlock) {
+      this.blockHeldForMs += delta;
+    } else {
+      this.blockHeldForMs = 0;
+    }
+  }
+
+  _handleHorizontal(delta, input) {
+    if (this.hurtLockMs > 0) return;
+
+    // 老年拄拐点地自带定身：出招期间不可移动
+    if (this._inRecovery && MELEE_CHAIN[this.phaseId].appliesStun) {
+      this.setVelocityX(0);
+      return;
+    }
+
+    // 格挡中：不能移动（护体姿态）
+    if (this.isBlocking) {
+      this.setVelocityX(0);
+      return;
+    }
+
+    const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+    if (dir !== 0) this.facing = dir;
+    this.setFlipX(this.facing < 0);
+
+    const grounded = this.isGrounded;
+    let speed = computeMoveSpeed(PHYSICS.walkSpeed, this.phase, grounded);
+    if (!grounded) {
+      speed *=
+        this.phaseId === 'middle' ? PHYSICS.airControlFactorMiddle : PHYSICS.airControlFactorYouth;
+    }
+    // 老年咳嗽喘息期间寸步难行
+    if (this.coughMs > 0) speed *= 0.25;
+
+    this.setVelocityX(dir * speed);
+  }
+
+  _handleJump(input, delta) {
+    if (input.jumpDown) this.jumpBufferMs = PHYSICS.jumpBufferMs;
+
+    const action = resolveJumpKeyAction(this.phase);
+
+    // 老年：机能剥夺 —— 只有咳嗽动作，永远不离地
+    if (action === 'cough') {
+      if (input.jumpDown && !this.isDead) {
+        this.coughMs = 420;
+        this.setVelocityX(0);
+        this.eventsHooks.onCough?.();
+      }
+      return;
+    }
+
+    if (this.jumpBufferMs > 0 && this.hurtLockMs <= 0 && !this.isBlocking) {
+      if (canJump(this.phase, { grounded: this.isGrounded, coyoteLeftMs: this.coyoteLeftMs })) {
+        this.setVelocityY(PHYSICS.jumpVelocity);
+        this.jumpBufferMs = 0;
+        this.coyoteLeftMs = 0;
+      }
+    }
+  }
+
+  _handleMelee(input) {
+    // 近战/远程用"按住"语义：起手与连击时机由连击窗口裁决，
+    // 长按 J 即可顺畅打出三连击；冷却内的按住不会重复触发远程。
+    if (!input.meleeHeld) return;
+
+    const grounded = this.isGrounded;
+
+    // 空中：只在起跳那一刻响应一次，避免长按 J 在空中疯狂刷判定
+    if (!grounded) {
+      // 老年期不可用 —— 不是特判，而是它根本离不了地（canJump=false → 永远走不到这里）
+      if (!this.phase.canJump || this.hurtLockMs > 0) return;
+      if (input._held?.jump && !this._airKickFired) {
+        this._airKickFired = true;
+        this._startMelee(3, { airKick: true });
+      }
+      return;
+    }
+    this._airKickFired = false;
+
+    if (
+      !canStartMelee({
+        hurtLockMs: this.hurtLockMs,
+        blocking: this.isBlocking,
+        grounded,
+      })
+    ) {
+      return;
+    }
+
+    // 上一段还在出招/收招：等它打完再起下一段（下次 update 会自动续接）
+    if (this._inRecovery) return;
+
+    const stage = nextComboStage(
+      this.meleeStage,
+      this.comboSinceActiveMs,
+      MELEE_CHAIN[this.phaseId].linkWindow,
+    );
+    this._startMelee(stage);
+  }
+
+  /** 起手一段近战（stage 1~3） */
+  _startMelee(stage, { airKick = false } = {}) {
+    const chain = MELEE_CHAIN[this.phaseId];
+    this.meleeStage = stage;
+    this.meleeActiveAt = chain.activeAt[stage - 1] ?? chain.activeAt[0];
+    this.meleeRecoverAt = chain.recover[stage - 1] ?? chain.recover[0];
+    this.meleeHitDone = false;
+    this.meleeElapsedMs = 0;
+    this.meleeAirKick = airKick;
+    this._inRecovery = true;
+    this.comboSinceActiveMs = 0;
+    // 出招时锁住水平意图（老年拄拐点地：动作更慢，且带定身）
+    if (MELEE_CHAIN[this.phaseId].appliesStun) this.setVelocityX(0);
+  }
+
+  _tickMelee(delta) {
+    // 连击窗口过期：自动回归第一段
+    if (this.meleeStage !== 0 && this.comboSinceActiveMs > MELEE_CHAIN[this.phaseId].linkWindow) {
+      this.meleeStage = 0;
+      this._inRecovery = false;
+    }
+    if (!this._inRecovery) return;
+
+    this.meleeElapsedMs += delta;
+
+    if (!this.meleeHitDone && this.meleeElapsedMs >= this.meleeActiveAt) {
+      this.meleeHitDone = true;
+      const chain = MELEE_CHAIN[this.phaseId];
+      const baseDamage = chain.damage[this.meleeStage - 1] ?? chain.damage[0];
+      // 伤害链：基础 ×【怦然心动】× 攻击力强化；暴击翻倍（issue #17）
+      const crit = rollCrit(this.critChance);
+      let damage = computeMeleeDamage(baseDamage, {
+        loveLetter: this.loveLetter,
+        attackLevels: this.attackLevels,
+      });
+      if (crit) damage *= LEVEL_UPGRADES.crit.critMultiplier;
+      const box = this.getMeleeHitbox();
+      this.eventsHooks.onMeleeHit?.({
+        damage,
+        crit,
+        stage: this.meleeStage,
+        airKick: this.meleeAirKick,
+        box,
+        phaseId: this.phaseId,
+        knockbackSmallEnemies: Boolean(chain.knockbackSmallEnemies),
+        appliesStun: Boolean(chain.appliesStun),
+        owner: this,
+      });
+    }
+
+    if (this.meleeElapsedMs >= this.meleeRecoverAt) {
+      // 收招完毕。段位保留到连击窗口过期，这样"点一下 J 再点一下"能接上第二、第三段。
+      this._inRecovery = false;
+      this.meleeHitDone = true;
+      this.meleeAirKick = false;
+      this.meleeElapsedMs = 0;
+    }
+  }
+
+  /** 近战判定框（世界坐标），供场景做 overlap 判定 */
+  getMeleeHitbox() {
+    if (this.meleeStage === 0) return null;
+    const chain = MELEE_CHAIN[this.phaseId];
+    const w = chain.reach + 10;
+    const h = this.meleeAirKick ? 26 : 20;
+    const cx = this.facing > 0 ? this.x + chain.reach / 2 : this.x - chain.reach / 2;
+    const cy = this.meleeAirKick ? this.y - this.displayHeight - 8 : this.y - h / 2 - 4;
+    return new Phaser.Geom.Rectangle(cx - w / 2, cy - h / 2, w, h);
+  }
+
+  _handleRanged(input) {
+    // 按住 L 时，冷却一好就继续投掷（手感接近"连发"），能量不足自然停下
+    if (!input.rangedHeld) {
+      this.rangedLatch = false;
+      return;
+    }
+    if (this.rangedCooldownMs > 0) return;
+    if (!canStartRanged({ hurtLockMs: this.hurtLockMs, blocking: this.isBlocking })) return;
+
+    const cost = RANGED_COST[this.phaseId];
+    const remaining = trySpendMp(this.mp, cost);
+    if (remaining === null) return; // 能量不足，放不出来
+
+    this.mp = remaining;
+    this.rangedCooldownMs = RANGED_COOLDOWN[this.phaseId] ?? RANGED_COOLDOWN.youth;
+    this.rangedActionMs = 240;
+    // 空中投掷（Space + L）：由"是否离地"自然区分，检查点同地面
+    this.eventsHooks.onRangedFire?.({
+      phaseId: this.phaseId,
+      x: this.x + this.facing * 12,
+      y: this.y - 14,
+      facing: this.facing,
+      airborne: !this.isGrounded,
+      owner: this,
+    });
+  }
+
+  _applyPhaseTexture() {
+    const atlasId = getPlayerAtlasId(this.phaseId);
+    if (this.scene.textures.exists(atlasId)) {
+      this.setTexture(atlasId, 'idle_0');
+      this.clearTint();
+      this.setOrigin(0.5, 23 / 24);
+      this.body?.setSize(14, 21);
+      this.body?.setOffset(5, 2);
+      return;
+    }
+
+    const placeholder = Player.ensurePlaceholderTexture(this.scene);
+    this.setTexture(placeholder);
+    this.clearTint();
+    this.setOrigin(0.5, 23 / 24);
+    this.body?.setSize(14, 21);
+    this.body?.setOffset(5, 2);
+    console.warn(`[Player] ${atlasId} missing; using generated placeholder`);
+  }
+
+  _syncAnimation() {
+    const atlasId = getPlayerAtlasId(this.phaseId);
+    if (!this.scene.textures.exists(atlasId)) return;
+
+    const desired = selectPlayerAnimation({
+      phaseId: this.phaseId,
+      grounded: this.isGrounded,
+      moving: Math.abs(this.body?.velocity?.x ?? 0) > 1,
+      blocking: this.isBlocking,
+      hurt: this.hurtLockMs > 0,
+      coughing: this.coughMs > 0,
+      meleeStage: this._inRecovery ? this.meleeStage : 0,
+      rangedAction: this.rangedActionMs > 0,
+    });
+
+    let animationName = desired;
+    if (!hasReadyAnimation(this.scene, atlasId, animationName)) {
+      console.warn(`[Player] ${atlasId}:${animationName} missing; falling back to idle`);
+      animationName = 'idle';
+    }
+    if (!hasReadyAnimation(this.scene, atlasId, animationName)) {
+      console.warn(`[Player] ${atlasId}:idle missing; animation stopped`);
+      this.anims.stop();
+      return;
+    }
+
+    const key = getAnimationKey(atlasId, animationName);
+    if (this.anims.currentAnim?.key !== key) this.play({ key, ignoreIfPlaying: true });
+  }
+
+  // ==========================================================
+  // 受伤 / 死亡 / 复活
+  // ==========================================================
+
+  /**
+   * 受到伤害（外部调用）。
+   * @param {number} damage
+   * @param {{fromX?: number, knockback?: number, source?: string}} [opts]
+   * @returns {{damage:number, blocked:boolean, perfect:boolean, died:boolean}}
+   */
+  takeDamage(damage, opts = {}) {
+    if (this.isDead || this.invulnMs > 0 || this.hurtLockMs > 0) {
+      return { damage: 0, blocked: false, perfect: false, died: false };
+    }
+
+    const blockHeld = this.isBlocking;
+    const result = resolveIncomingDamage(damage, {
+      blockHeld,
+      blockHeldForMs: blockHeld ? this.blockHeldForMs : Infinity,
+      passiveReduction: this.broadcastExercise ? 0.85 : COMBAT.blockReductionBase,
+    });
+
+    this.hp = applyDamage(this.hp, result.damage);
+
+    if (result.blocked) {
+      if (result.perfect) {
+        this.mp = Math.min(this.maxMp, this.mp + result.mpGain);
+      }
+      // 格挡成功小幅回冲，不打断姿态
+      this.invulnMs = 120;
+    } else {
+      this.hurtLockMs = PHYSICS.hurtLockMs;
+      this.invulnMs = PHYSICS.invulnMs;
+      const kb = opts.knockback ?? 120;
+      const dir = opts.fromX !== undefined ? Math.sign(this.x - opts.fromX) || 1 : -this.facing;
+      this.setVelocity(dir * kb, opts.lift ?? -110);
+    }
+
+    this.eventsHooks.onDamaged?.({
+      result,
+      hp: this.hp,
+      damage: result.damage,
+      source: opts.source ?? 'unknown',
+      owner: this,
+    });
+
+    if (this.hp <= 0) {
+      this.die();
+      return { ...result, died: true };
+    }
+    return { ...result, died: false };
+  }
+
+  die() {
+    if (this.isDead) return;
+    this.isDead = true;
+    this.setVelocity(0, 0);
+    this.setTint(0x555566);
+    this.eventsHooks.onDeath?.({ owner: this });
+  }
+
+  /**
+   * 在最近的检查点复活（满血满蓝 + 无敌帧）
+   * @param {{x?:number, y?:number}} [checkpoint]
+   */
+  respawn(checkpoint) {
+    const spot = checkpoint ?? this.spawnPoint;
+    const state = respawnState(this.phase, { standardAnswer: this.standardAnswer });
+    this.hp = state.hp;
+    this.mp = state.mp;
+    this.invulnMs = state.invulnMs;
+    this.isDead = false;
+    this.hurtLockMs = 0;
+    this.meleeStage = 0;
+    this.setPosition(spot.x, spot.y);
+    this.setVelocity(0, 0);
+    this.clearTint();
+    this._applyPhaseTexture();
+    this._syncAnimation();
+    this.setAlpha(1);
+    return this;
+  }
+
+  /** 调试：画近战判定框 */
+  setDebugMeleeBox(visible) {
+    if (!visible) {
+      this.meleeHitboxDebug?.destroy();
+      this.meleeHitboxDebug = null;
+      return;
+    }
+    if (!this.meleeHitboxDebug) {
+      this.meleeHitboxDebug = this.scene.add
+        .rectangle(0, 0, 1, 1, 0xff3366, 0.25)
+        .setOrigin(0.5)
+        .setDepth(9000);
+    }
+    const box = this.getMeleeHitbox();
+    if (box) {
+      this.meleeHitboxDebug.setVisible(true).setPosition(box.x + box.width / 2, box.y + box.height / 2);
+      this.meleeHitboxDebug.setSize(box.width, box.height);
+    } else {
+      this.meleeHitboxDebug.setVisible(false);
+    }
+  }
+}

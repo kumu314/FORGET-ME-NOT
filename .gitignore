@@ -1,0 +1,22 @@
+# 依赖与构建产物（游戏代码在 game/ 目录）
+node_modules/
+game/node_modules/
+dist/
+game/dist/
+.vite/
+coverage/
+
+# 环境与密钥：绝不入库
+.env
+.env.*
+!.env.example
+
+# 系统与编辑器噪音
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+
+# 美术生成脚本的中间产物（tools/*.ps1 写入，不入库）
+tools/_style_ref/
