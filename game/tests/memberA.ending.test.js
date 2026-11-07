@@ -7,8 +7,7 @@ vi.mock('../src/ui/TypewriterTransition.js', () => ({
   TRANSITION_PRESETS: { ending: { title: '结局', lines: ['人生不是一场必须要赢的战斗。', '走过的每一步，都算数。'] } },
 }));
 
-import { TypewriterTransition } from '../src/ui/TypewriterTransition.js';
-import { installEndingScreen, ENDING_TRIGGER_PADDING } from '../src/ui/EndingScreen.js';
+import { installEndingScreen } from '../src/ui/EndingScreen.js';
 import { WORLD_WIDTH } from '../src/config/stageLayout.js';
 
 /** 构造一个最小可用的假场景（只实现 EndingScreen 触到的面） */
@@ -22,6 +21,8 @@ function stubScene({ phaseId = 'elder', playerX = 48 } = {}) {
   return {
     _handlers: handlers,
     phaseId,
+    _advanceStage: vi.fn(),
+    cameras: { main: { fadeOut: vi.fn() } },
     player: { x: playerX },
     physics: { world: { pause: vi.fn() } },
     scale: { width: 480, height: 270 },
@@ -44,47 +45,49 @@ function stubScene({ phaseId = 'elder', playerX = 48 } = {}) {
   };
 }
 
-const tick = (scene) => scene._handlers.update?.();
+const hug = (scene) => scene._handlers['story:hug']?.();
 
-describe('结局保底触发器（issue #25）', () => {
+describe('拥抱后的唯一结局入口（issue #23 / #25）', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('老年关走到世界尽头恰好触发一次结局', async () => {
+  it('老年拥抱事件恰好推进一次打字机结局', async () => {
     const scene = stubScene({ phaseId: 'elder', playerX: WORLD_WIDTH - 10 });
     installEndingScreen(scene);
-    tick(scene);
+    hug(scene);
     await Promise.resolve();
-    expect(TypewriterTransition.play).toHaveBeenCalledTimes(1);
-    expect(TypewriterTransition.play.mock.calls[0][0]).toBeTypeOf('object');
-    tick(scene);
-    expect(TypewriterTransition.play).toHaveBeenCalledTimes(1);
+    expect(scene._advanceStage).toHaveBeenCalledTimes(1);
+    expect(scene.cameras.main.fadeOut).toHaveBeenCalledWith(700, 0, 0, 0);
+    hug(scene);
+    expect(scene._advanceStage).toHaveBeenCalledTimes(1);
   });
 
   it('青年/中年关走到尽头不触发', () => {
     for (const phaseId of ['youth', 'middle']) {
       const scene = stubScene({ phaseId, playerX: WORLD_WIDTH - 10 });
       installEndingScreen(scene);
-      tick(scene);
-      expect(TypewriterTransition.play).not.toHaveBeenCalled();
+      hug(scene);
+      expect(scene._advanceStage).not.toHaveBeenCalled();
     }
   });
 
-  it('老年关未到阈值不触发', () => {
-    const scene = stubScene({ phaseId: 'elder', playerX: 100 });
+  it('老年关走到世界边缘也不能跳过拥抱', () => {
+    const scene = stubScene({ phaseId: 'elder', playerX: WORLD_WIDTH - 1 });
     installEndingScreen(scene);
-    tick(scene);
-    expect(TypewriterTransition.play).not.toHaveBeenCalled();
+    scene._handlers.update?.();
+    expect(scene._advanceStage).not.toHaveBeenCalled();
   });
 
-  it('重复安装幂等；shutdown 时解绑 update', () => {
+  it('重复安装幂等；shutdown 后同一场景可重新安装', () => {
     const scene = stubScene({ phaseId: 'elder', playerX: 100 });
     installEndingScreen(scene);
     installEndingScreen(scene);
-    expect(scene._handlers.update).toBeTypeOf('function');
+    expect(scene._handlers['story:hug']).toBeTypeOf('function');
     expect(scene._handlers['once:shutdown']).toBeTypeOf('function');
     scene._handlers['once:shutdown']();
-    expect(scene._handlers.update).toBeUndefined();
+    expect(scene._handlers['story:hug']).toBeUndefined();
+    installEndingScreen(scene);
+    expect(scene._handlers['story:hug']).toBeTypeOf('function');
   });
 });

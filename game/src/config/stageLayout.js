@@ -171,6 +171,59 @@ const YOUTH_TILES = [
   { t: 'floor_dark', x: 0, y: 256, w: 100, h: 1 },
 ];
 
+const MIDDLE_TILES = [
+  { t: 'wall_office', x: 0, y: 80, w: 69, h: 10 },
+  { t: 'ceiling_plain', x: 0, y: 80, w: 100 },
+  ...[96, 352, 608, 864].map((x) => ({ t: 'ceiling_light', x, y: 80, w: 4 })),
+  ...[160, 400].flatMap((x) => [
+    { t: 'partition_top', x, y: 160, w: 8 },
+    { t: 'partition_body', x, y: 176, w: 8, h: 4 },
+  ]),
+  ...[{ x: 220, y: 208, w: 7 }, { x: 470, y: 192, w: 5 }].flatMap(({ x, y, w }) => [
+    { t: 'desk_l', x, y }, { t: 'desk_m', x: x + 16, y, w },
+    { t: 'desk_r', x: x + (w + 1) * 16, y },
+    { t: 'desk_monitor', x: x + 32, y: y - 16 },
+  ]),
+  ...[620, 684, 900].flatMap((x) => [
+    { t: 'printer_tl', x, y: 208 }, { t: 'printer_tr', x: x + 16, y: 208 },
+    { t: 'printer_bl', x, y: 224 }, { t: 'printer_br', x: x + 16, y: 224 },
+  ]),
+  ...[812, 860].flatMap((x) => [
+    { t: 'vending_top', x, y: 208 }, { t: 'vending_bottom', x, y: 224 },
+  ]),
+  { t: 'glasswall_a', x: 1104, y: 96, w: 31, h: 9 },
+  ...[1104, 1232, 1360, 1488].map((x) => ({ t: 'mullion', x, y: 96, h: 9 })),
+  { t: 'chair_office', x: 1460, y: 224 },
+  { t: 'box_kpi', x: 1050, y: 224 },
+  { t: 'carpet_a', x: 0, y: 240, w: 69 },
+  { t: 'wetfloor_a', x: 1104, y: 240, w: 31 },
+  { t: 'carpet_dark', x: 0, y: 256, w: 100 },
+];
+
+const ELDER_TILES = [
+  { t: 'wall_paper', x: 0, y: 80, w: 45, h: 6 },
+  { t: 'rail_wood', x: 0, y: 176, w: 45 },
+  { t: 'wainscot', x: 0, y: 192, w: 45, h: 2 },
+  { t: 'base_wood', x: 0, y: 224, w: 45 },
+  { t: 'door_home_top', x: 16, y: 208 }, { t: 'door_home_bot', x: 16, y: 224 },
+  ...[128, 352, 576].flatMap((x) => [
+    { t: 'window_old', x, y: 144 }, { t: 'sill_old', x, y: 160 },
+  ]),
+  { t: 'photo_frame', x: 256, y: 160 },
+  { t: 'tv_old', x: 320, y: 224 },
+  { t: 'clock_top', x: 480, y: 208 }, { t: 'clock_base', x: 480, y: 224 },
+  { t: 'rocker', x: 640, y: 224 },
+  { t: 'wood_a', x: 0, y: 240, w: 45 },
+  { t: 'wood_dark', x: 0, y: 256, w: 45 },
+  { t: 'fence_wood', x: 720, y: 208, w: 55 },
+  ...[784, 1040, 1296, 1536].map((x) => ({ t: 'trunk_maple', x, y: 176, h: 4 })),
+  ...[832, 1168].map((x) => ({ t: 'bench_park', x, y: 224, w: 2 })),
+  ...[752, 944, 1120, 1360].map((x) => ({ t: 'leaves_pile', x, y: 224, w: 2 })),
+  { t: 'lantern_stone', x: 1392, y: 224 },
+  { t: 'path_a', x: 720, y: 240, w: 55 },
+  { t: 'grass_a', x: 720, y: 256, w: 55 },
+];
+
 export const STAGE_LAYOUTS = Object.freeze({
   youth: {
     stage: 1,
@@ -221,6 +274,13 @@ export const STAGE_LAYOUTS = Object.freeze({
     stage: 2,
     title: '第二关 · 泥潭中年',
     phase: 'middle',
+    tileset: 'office_rain',
+    sections: [
+      { id: 'workstations', from: 0, to: 600, label: '深夜工位' },
+      { id: 'printers', from: 600, to: 760, label: '打印机长廊' },
+      { id: 'tea-room', from: 760, to: 1104, label: '茶水间' },
+      { id: 'boss-foyer', from: 1104, to: 1600, label: '总裁办公室前厅' },
+    ],
     spawn: { x: 48, y: GROUND_Y },
     checkpoints: [
       { x: 48, y: GROUND_Y, label: '工位起点' },
@@ -230,14 +290,17 @@ export const STAGE_LAYOUTS = Object.freeze({
     solids: [
       { x: 0, y: GROUND_Y, w: 1600, h: 30, kind: 'ground' },
       // 工位桌面（可跳上）
-      { x: 220, y: 196, w: 140, h: 44, kind: 'desk' },
-      { x: 470, y: 176, w: 110, h: 64, kind: 'desk' },
+      { x: 220, y: 208, w: 144, h: 32, kind: 'desk' },
+      { x: 470, y: 192, w: 112, h: 48, kind: 'desk' },
       // 打印机长廊顶盖
-      { x: 760, y: 188, w: 180, h: 52, kind: 'printer' },
-      { x: 1040, y: 150, w: 96, h: 12, kind: 'duct', label: '通风管' },
+      { x: 620, y: 208, w: 32, h: 32, kind: 'printer' },
+      { x: 684, y: 208, w: 32, h: 32, kind: 'printer' },
     ],
-    easterEggs: [{ id: 'thermos', x: 850, y: GROUND_Y, type: 'buff' }],
-    tiles: [],
+    easterEggs: [
+      { id: 'thermos', x: 842, y: GROUND_Y, type: 'buff' },
+      { id: 'wedding-ring', x: 1080, y: GROUND_Y, type: 'story' },
+    ],
+    tiles: MIDDLE_TILES,
     breakables: [],
     eggHelpers: [],
   },
@@ -245,6 +308,11 @@ export const STAGE_LAYOUTS = Object.freeze({
     stage: 3,
     title: '第三关 · 暮年回响',
     phase: 'elder',
+    tileset: 'home_autumn',
+    sections: [
+      { id: 'home', from: 0, to: 720, label: '老宅客厅' },
+      { id: 'autumn-park', from: 720, to: 1600, label: '秋叶公园' },
+    ],
     spawn: { x: 48, y: GROUND_Y },
     checkpoints: [
       { x: 48, y: GROUND_Y, label: '玄关' },
@@ -256,7 +324,7 @@ export const STAGE_LAYOUTS = Object.freeze({
       { x: 0, y: GROUND_Y, w: 1600, h: 30, kind: 'ground' },
     ],
     easterEggs: [],
-    tiles: [],
+    tiles: ELDER_TILES,
     breakables: [],
     eggHelpers: [],
   },

@@ -59,11 +59,11 @@ export const STAGE_SPAWNS = Object.freeze({
   middle: {
     level: 1,
     monsters: [
-      { type: 'unreadDot', x: 400 },
-      { type: 'unreadDot', x: 640 },
+      { type: 'unreadDot', x: 280, y: 198 },
+      { type: 'unreadDot', x: 510, y: 182 },
       { type: 'unreadDot', x: 990 },
-      { type: 'overtimeGhost', x: 620 },
-      { type: 'overtimeGhost', x: 1180 },
+      { type: 'overtimeGhost', x: 780 },
+      { type: 'overtimeGhost', x: 1040 },
       { type: 'requirementVortex', x: 1000 },
       { type: 'requirementVortex', x: 1250 },
     ],
@@ -77,9 +77,7 @@ export const STAGE_SPAWNS = Object.freeze({
 
   /*
    * 第三关 · 暮年回响：纯平地，没有跳跃
-   * 敌人阵容是占位——GDD 第三关只写了"极高频记忆碎片清场"，没给敌人清单，
-   * 先放两只地面 + 一只浮空，保证老年关有靶子可打（浮空那只只靠 L 和忠犬吠叫处理）。
-   * 终局 Boss（拉杆箱孩子）还没做，见 issue #23，这里 boss 置 null。
+   * 记忆中的敌人供追踪碎片清场；孩子由 StageScene 作为非战斗叙事角色处理。
    */
   elder: {
     level: 2,
