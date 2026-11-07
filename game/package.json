@@ -1,8 +1,8 @@
 {
-  "name": "forget-me-not",
+  "name": "until-the-end",
   "private": true,
   "version": "0.1.0",
-  "description": "《忘记我》Forget Me Not — 2D 像素叙事动作横板闯关 (HENU Hackathon)",
+  "description": "《见我》Until the End — 2D 像素叙事动作横板闯关 (HENU Hackathon)",
   "type": "module",
   "scripts": {
     "dev": "vite",
