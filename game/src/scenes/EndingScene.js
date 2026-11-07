@@ -23,8 +23,8 @@ export default class EndingScene extends Phaser.Scene {
       fontFamily: FONT, fontSize: `${size}px`, color,
     });
 
-    text(18, 26, '忘记我', 22);
-    text(19, 56, 'FORGET ME NOT', 8, '#b8b1a5');
+    text(18, 26, '见我', 22);
+    text(19, 56, 'UNTIL THE END', 8, '#b8b1a5');
     this.add.rectangle(158, 136, 1, 226, 0x64533f);
     text(18, 90, '制作团队', 11, '#d4b783');
     ['李姝怡', '贾明杰', '邓宜安', '赵紫阳', '任涵毓'].forEach((name, i) => {
