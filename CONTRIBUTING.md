@@ -47,7 +47,7 @@ PR 动了以下任一项，开 PR 时在团队群报备一声、等回应再合�
 
 ## 合并规矩
 
-- `feature → develop`：**至少 1 名成员 approve**（美术组 A/B 互审资源规格；程序组 C/D/E 互审变量冲突与全局污染），Squash and merge。
+- `feature → develop`：**无需审批**（2026-11-07 修订）。CI 绿 + 提 PR 自查四条 + 影响面报备是作者的责任；**合并权集中由柯木批量执行**（Squash and merge），合并时做最终把关。
 - `develop → main`：阶段性整体测试通过后由**技术负责人**统一发 PR 合并；`main` 任何时候不走直推。
 - 工作分支合并后即删，下次开工从最新 `develop` 重新切出。
 - 冲突在自己分支上解决，不在 develop / main 上解决。
