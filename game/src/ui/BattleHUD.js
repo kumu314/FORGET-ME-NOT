@@ -40,6 +40,22 @@ export class BattleHUD {
     this.popups = [];     // 飘字池
     this.flash = 0;       // 受伤红闪 0~1
     this.t = 0;
+    this.fontFamily = 'monospace'; // 像素字体不可用时的安全字体栈由 BootScene 探测后经 setFontFamily 注入
+  }
+
+  /**
+   * 设置 HUD 的字体族。
+   * BootScene 探测到像素字体缺失时会传入安全回退栈（黑体优先），
+   * 避免中文回退成宋体导致观感断裂。
+   */
+  setFontFamily(family) {
+    if (typeof family === 'string' && family.trim()) this.fontFamily = family;
+  }
+
+  /** 统一字体拼装：所有 canvas 文本都走这里，保证字体栈一致 */
+  _font(size, bold = false) {
+    const family = (typeof window !== 'undefined' && window.__FMN_FONT_STACK__) || this.fontFamily || 'monospace';
+    return `${bold ? 'bold ' : ''}${size}px ${family}`;
   }
 
   setResolution(w, h) { this.rw = w; this.rh = h; }
@@ -76,6 +92,9 @@ export class BattleHUD {
   }
 
   render(dt = 1 / 60) {
+    // 空值防护：场景切换瞬间 player 可能为 undefined/null。
+    // 此时直接跳过本帧绘制，绝不能抛错——否则 rAF 中断会导致整屏黑屏。
+    if (!this.player) { this.t += dt; return; }
     const { ctx } = this;
     const L = this._layout();
     this.t += dt;
@@ -115,13 +134,13 @@ export class BattleHUD {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       if (p.crit) {
-        ctx.font = 'bold 13px monospace';
+        ctx.font = this._font(13, true);
         ctx.strokeStyle = '#c0392b';
         ctx.lineWidth = 1;
         ctx.strokeText(p.text, x, y);
         ctx.fillStyle = '#ffe15b';
       } else {
-        ctx.font = '8px monospace';
+        ctx.font = this._font(8);
         ctx.fillStyle = p.color || '#ffffff';
       }
       ctx.fillText(p.text, x, y);
@@ -130,11 +149,12 @@ export class BattleHUD {
   }
 
   _drawPlayerBars() {
-    const { hp, maxHp, mp, maxMp } = this.player;
+    // 防御性默认值：字段缺失/为 NaN 时也画得出来，不抛错
+    const { hp = 0, maxHp = 1, mp = 0, maxMp = 1 } = this.player ?? {};
     const x = 6, xpY = this.rh - 27, hpY = this.rh - 18, mpY = this.rh - 9;
     // 经验条（issue #17）：满级不必隐藏——它是常驻成长读数
     if (this.xp) {
-      const { level, xp, next } = this.xp;
+      const { level = 0, xp = 0, next = 1 } = this.xp;
       this._label(`Lv.${level}`, x, xpY - 1);
       this._bar(x + 30, xpY, 96, 3, Math.min(xp, next), next, '#ffd75b');
     }
@@ -151,7 +171,7 @@ export class BattleHUD {
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
     ctx.fillRect(x - 2, y - 12, w + 4, 20);
     ctx.fillStyle = '#ffe15b';
-    ctx.font = '8px monospace';
+    ctx.font = this._font(8);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillText(this.boss.name, this.rw / 2, y - 9);
@@ -161,7 +181,7 @@ export class BattleHUD {
   _drawStage() {
     if (!this.stage) return;
     const { ctx } = this;
-    ctx.font = '8px monospace';
+    ctx.font = this._font(8);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     const w = ctx.measureText(this.stage).width + 8;
@@ -174,7 +194,7 @@ export class BattleHUD {
   _label(text, x, y) {
     const { ctx } = this;
     ctx.fillStyle = '#e8e8e8';
-    ctx.font = '8px monospace';
+    ctx.font = this._font(8);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillText(text, x, y);
@@ -185,8 +205,11 @@ export class BattleHUD {
     const { ctx } = this;
     const seg = 20, gap = 1;
     const segW = Math.max(1, Math.floor((w - gap * (seg - 1)) / seg));
-    const filled = Math.max(0, Math.round((val / max) * seg));
-    const blink = lowBlink && max > 0 && val / max <= lowBlink && Math.floor(this.t * 4) % 2 === 0;
+    // 空值/NaN 防护：max 非法时按 1 处理，避免 NaN 传播到段数
+    const safeMax = Number.isFinite(max) && max > 0 ? max : 1;
+    const safeVal = Number.isFinite(val) ? Math.max(0, val) : 0;
+    const filled = Math.max(0, Math.round((safeVal / safeMax) * seg));
+    const blink = lowBlink && safeVal / safeMax <= lowBlink && Math.floor(this.t * 4) % 2 === 0;
 
     ctx.fillStyle = 'rgba(0,0,0,0.65)';
     ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
