@@ -30,7 +30,10 @@ export class MonsterFSM extends Phaser.Physics.Arcade.Sprite {
     this.body.setOffset((this.width - def.body.w) / 2, this.height - def.body.h);
     this.body.setAllowGravity(!def.flying);
     if (!def.flying) this.body.setGravityY(AI.gravityY);
-    this.setDepth(3);
+    // depth 14：地形/瓦片是 10~12，玩家是 20。
+    // 原来写 3，小怪会被瓦片盖住半截（#47 瓦片上墙后尤其明显，站位贴着地面的怪只剩头顶露出来）。
+    // 取 14 让怪站在场景之上、玩家之下，也留出 15 给雨幕等前景特效。
+    this.setDepth(14);
 
     this.hpMax = def.hp;
     this.hp = def.hp;
