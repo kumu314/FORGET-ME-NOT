@@ -90,8 +90,7 @@ export class BattleHUD {
 
     this._drawPopups(dt);
     this._drawBossBar();
-    this._drawPlayerBars();
-    this._drawXpBar();
+    this._drawPlayerBars(); // 经验条在 _drawPlayerBars 内绘制（xp 数据存在时）
     this._drawStage();
 
     if (this.flash > 0) {
