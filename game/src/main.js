@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from './config/gameConfig.js';
 import BootScene from './scenes/BootScene.js';
 import StageScene from './scenes/StageScene.js';
+import EndingScene from './scenes/EndingScene.js';
 
 /**
  * Phaser.Game 配置与初始化入口
@@ -43,7 +44,7 @@ const config = {
 
 /** 创建游戏实例（供入口与调试复用） */
 export function createGame() {
-  return new Phaser.Game({ ...config, scene: [BootScene, StageScene] });
+  return new Phaser.Game({ ...config, scene: [BootScene, StageScene, EndingScene] });
 }
 
 // 挂载到 window 便于 CI/调试时用脚本取状态与截图

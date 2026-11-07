@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { AI, MONSTERS } from '../config/aiConfig.js';
+import { monsterBreathKey } from '../scenes/monsterSprites.js';
 
 /**
  * 小怪 AI：有限状态机 FSM（成员D · GDD 7.1）
@@ -55,6 +56,8 @@ export class MonsterFSM extends Phaser.Physics.Arcade.Sprite {
     this.player = scene.ai ? scene.ai.player : scene.player;
 
     if (def.flying) this.baseY = y;
+    const breathKey = monsterBreathKey(def.texture);
+    if (scene.anims.exists(breathKey)) this.play(breathKey);
   }
 
   update(time, delta) {
