@@ -48,6 +48,7 @@ export class ProjectilePool {
     b.damage = cfg.damage || 0;
     b.faction = cfg.faction || 'enemy';
     b.slow = cfg.slow || null;
+    b.source = cfg.source || 'projectile';
     b.aoeRadius = cfg.aoeRadius || 0;
     b.targetY = cfg.targetY !== undefined ? cfg.targetY : null;
     b.pierce = cfg.pierce || 0;
@@ -117,7 +118,7 @@ export class ProjectilePool {
     player.takeDamage(b.damage, {
       fromX: b.x,
       knockback: 100,
-      source: 'projectile',
+      source: b.source,
     });
     // C 的 Player 目前没有 applySlow；接口补上后这里自动生效
     if (b.slow && typeof player.applySlow === 'function') {

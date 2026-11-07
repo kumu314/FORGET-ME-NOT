@@ -12,6 +12,7 @@ import DogCompanion from './DogCompanion.js';
 import BossTeacher from './BossTeacher.js';
 import BossAdmin from './BossAdmin.js';
 import { getStageSpawns, spawnPointFor } from './StageSpawns.js';
+import { grantStagePassive } from '../entities/stagePassives.js';
 
 /** Boss 类型注册表：spawnBoss('teacher' | 'employer') */
 export const BossTypes = {
@@ -299,6 +300,7 @@ export class AIManager {
       const firstKill = !this.seenDrops.has(info.type);
       if (firstKill || Math.random() < def.drop.chance) {
         this.seenDrops.add(info.type);
+        grantStagePassive(this.player, this.scene.game.registry, info.type);
         this.scene.events.emit('ai:skill:drop', { name: def.drop.name, type: info.type });
         this.scene.events.emit('ai:toast', { text: `获得被动【${def.drop.name}】` });
       }
@@ -417,6 +419,20 @@ export class AIManager {
     for (const m of this.aliveMonsters()) {
       if (bullet.hitTargets?.has(m)) continue;
       if (!Phaser.Geom.Intersects.RectangleToRectangle(rect, m.getBounds())) continue;
+      if (m.shieldActive) {
+        const velocity = bullet.body?.velocity;
+        this.bullets.spawn({
+          x: m.x, y: m.y,
+          vx: -(velocity?.x || bullet.facing * bullet.profile.speed),
+          vy: -(velocity?.y || 0),
+          texture: 'bullet_letter', damage: bullet.profile.damage,
+          faction: 'enemy', life: 2,
+        });
+        bullet.consumed = true;
+        bullet.destroy();
+        this.scene.events.emit('ai:fx', { type: 'shield', x: m.x, y: m.y });
+        return hits;
+      }
       const dmg = bullet.registerHit(m);
       if (dmg > 0) {
         m.takeDamage(dmg, opts);

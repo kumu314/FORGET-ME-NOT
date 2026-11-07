@@ -12,6 +12,8 @@ import { mountBattleHud } from '../ui/HudOverlay.js';
 import { EasterEggModal, EGG_PRESETS } from '../ui/EasterEggModal.js';
 import { TypewriterTransition, TRANSITION_PRESETS } from '../ui/TypewriterTransition.js';
 import { installEndingScreen } from '../ui/EndingScreen.js';
+import { ELDER_CHILD, canHugChild } from '../config/elderEnding.js';
+import { installStagePassives, tickPassiveRecovery } from '../entities/stagePassives.js';
 
 /**
  * 关卡场景（成员C：关卡碰撞检测与检查点复活 / 成员D：AI 接线 / 成员E：HUD·弹窗·音频·转场）
@@ -39,6 +41,11 @@ const EGG_BY_ID = {
   'puppy-box': EGG_PRESETS.dog,
   'standard-answer': EGG_PRESETS.answer,
   thermos: EGG_PRESETS.cup,
+  'wedding-ring': {
+    key: 'ring', title: '工牌旁的婚戒', icon: '💍', theme: 'paper',
+    lines: ['工牌会过期，戒指内侧的名字却一直在。', '你想起热茶、等你回家的人，和脚边那团温暖的毛。', '雨停之后，记得一起回家。'],
+    reward: '留下一段家庭记忆；忠犬恢复守护的力量',
+  },
   // 彩蛋1 手写情书（issue #16）：GDD 未给原文，按 §5.5 回忆章节基调补写
   'love-letter': {
     key: 'letter',
@@ -53,9 +60,6 @@ const EGG_BY_ID = {
     reward: '获得永久增益【怦然心动】：近战伤害 +25%',
   },
 };
-
-/** 第三关走到公园尽头的触发线（孩子终局 Boss 未实装前的保底结局） */
-const ENDING_TRIGGER_X = 1450;
 
 /** 音效只加载一次（三个关卡共用同一份 SFX 缓冲） */
 let sfxLoading = null;
@@ -96,6 +100,7 @@ export default class StageScene extends Phaser.Scene {
     this.modalOpen = false;
     this.transitioning = false;
     this.endingPlayed = false;
+    this.child = null;
     this.lastHitSfxAt = 0;
     this.aiListeners = [];
     this.eggHelperBugs = [];
@@ -116,10 +121,12 @@ export default class StageScene extends Phaser.Scene {
     this._spawnPlayer();
     this._initAI();
     this._initXP();
+    installStagePassives(this.player, this.game.registry, () => this.time.now);
+    this._buildChild();
 
     this.hud = createHud(this);
     this._initUiModules();
-    installEndingScreen(this); // 结局保底（issue #25）：老年关走到尽头 → 黑屏打字机结局
+    installEndingScreen(this);
 
     this.cameras.main.startFollow(this.player, true, 0.2, 0.2);
     this.cameras.main.setDeadzone(60, 40);
@@ -159,6 +166,7 @@ export default class StageScene extends Phaser.Scene {
       // 素材没加载成功时 playLoop 返回空函数，等于静音，不抛错。
       if (this.phaseId !== 'middle' || !this.scene.isActive()) return;
       this._stopRain = audio.playLoop('rain', { volume: 0.22 });
+      this.time.addEvent({ delay: 9000, loop: true, callback: () => audio.play('thunder', { volume: 0.35 }) });
     });
     audio.stopBgm();
     audio.startBgm(BGM_KEY[this.phaseId]);
@@ -216,11 +224,15 @@ export default class StageScene extends Phaser.Scene {
       audio.play('heal');
       if (this.player) this.battleHud?.spawnText(this.player.x, this.player.y - 20, `+${amount}`, '#7ddc8a');
     });
-    on('ai:skill:drop', () => audio.play('mp_up'));
+    on('ai:skill:drop', ({ name }) => {
+      audio.play('mp_up');
+      this._toast(`获得被动【${name}】`);
+    });
 
     on('ai:boss:spawn', ({ name, hpMax }) => {
       this.battleHud?.showBoss({ name, maxHp: hpMax });
       audio.play('boss_enter');
+      audio.play('bell');
     });
     on('ai:boss:hp', ({ hp }) => this.battleHud?.setBossHp(hp));
     on('ai:boss:phase', () => {
@@ -238,7 +250,7 @@ export default class StageScene extends Phaser.Scene {
 
     for (const s of this.layout.solids) {
       const key = SOLID_TEXTURE[s.kind] ?? SOLID_TEXTURE.ground;
-      // 第一关由 tiles 数据负责贴图（B 的瓦片），其余关沿用占位纹理
+      // 三关均由 tiles 数据负责贴图。
       if (this.layout.tiles.length === 0) {
         this.add.tileSprite(s.x, s.y, s.w, s.h, key).setOrigin(0, 0).setDepth(10);
       }
@@ -269,17 +281,18 @@ export default class StageScene extends Phaser.Scene {
 
   /** 数据驱动上墙（issue #16）：{ t: 帧名, x, y, w?, h? }，按"墙带→道具→地面"次序绘制，后画盖先画 */
   _paintTiles() {
+    const atlas = this.layout.tileset ?? 'school_corridor';
     for (const op of this.layout.tiles) {
       const cols = op.w ?? 1;
       const rows = op.h ?? 1;
       if (cols > 1 || rows > 1) {
         // 跑排瓦片：用 tileSprite 平铺，Phaser 会为图集帧生成填充纹理
         this.add
-          .tileSprite(op.x, op.y, cols * 16, rows * 16, 'school_corridor', op.t)
+          .tileSprite(op.x, op.y, cols * 16, rows * 16, atlas, op.t)
           .setOrigin(0, 0)
           .setDepth(10);
       } else {
-        this.add.image(op.x, op.y, 'school_corridor', op.t).setOrigin(0, 0).setDepth(10);
+        this.add.image(op.x, op.y, atlas, op.t).setOrigin(0, 0).setDepth(10);
       }
     }
   }
@@ -337,6 +350,11 @@ export default class StageScene extends Phaser.Scene {
             }
           },
         });
+      } else if (egg.id === 'thermos' && this.textures.exists('easter_eggs')) {
+        marker = this.add.image(egg.x, egg.y - 8, 'easter_eggs', 'thermos_a').setDepth(12);
+      } else if (egg.id === 'wedding-ring') {
+        marker = this.add.circle(egg.x, egg.y - 8, 4, 0xffd76a, 0.3)
+          .setStrokeStyle(2, 0xffd76a).setDepth(12);
       } else {
         marker = this.add.image(egg.x, egg.y - 8, 'ph_easter').setDepth(12);
       }
@@ -358,7 +376,7 @@ export default class StageScene extends Phaser.Scene {
       phase: this.phaseId,
       onCough: () => this._flashCough(),
       onRangedFire: (shot) => {
-        audio.play('throw');
+        audio.play(shot.phaseId === 'elder' ? 'magic' : 'throw');
         this._fireBullet(shot);
       },
       // 近战结算入口：先打碎场景可碎物，AIManager 会在 installPlayerHooks 里链上小怪结算
@@ -398,6 +416,17 @@ export default class StageScene extends Phaser.Scene {
     return ground.length ? Math.min(...ground.map((s) => s.y)) : 240;
   }
 
+  _buildChild() {
+    if (this.phaseId !== 'elder') return;
+    this.child = this.add.sprite(ELDER_CHILD.x, this._groundTop(), 'boss_child', 'idle_0')
+      .setOrigin(0.5, 47 / 48).setDepth(18);
+    this.child.play('boss_child:idle');
+    this.add.text(ELDER_CHILD.x - 96, this._groundTop() - 68,
+      '孩子拖着行李箱，准备远行。\n慢慢走到他身后，抱一抱他。', {
+        fontFamily: 'monospace', fontSize: '8px', color: '#ffe6a7', align: 'center',
+      }).setDepth(21);
+  }
+
   /** 经验系统接线（issue #17）：光球磁吸 + 升级三选一，跨关 registry 持久化 */
   _initXP() {
     this.xp = new XpSystem(this, this.player);
@@ -433,16 +462,27 @@ export default class StageScene extends Phaser.Scene {
     if (next) {
       this.scene.restart({ phase: next });
     } else {
-      this._toast('—— 完 ——');
+      this.scene.start('EndingScene');
     }
   }
 
-  /** 第三关：走到公园尽头触发保底结局（孩子终局 Boss 见 issue #23） */
   _checkEnding() {
-    if (this.phaseId !== 'elder' || this.endingPlayed) return;
-    if (this.player.x < ENDING_TRIGGER_X) return;
+    if (this.phaseId !== 'elder' || this.endingPlayed || !this.child) return;
+    if (!canHugChild(this.player)) return;
     this.endingPlayed = true;
-    this._advanceStage();
+    this.modalOpen = true;
+    this.player.setVelocity(0, 0);
+    this.player.play('player_elder:idle', true);
+    this.child.setFlipX(true);
+    this.child.play('boss_child:idle', true);
+    this.physics.world.pause();
+    audio.stopBgm();
+    const warmth = this.add.circle(this.child.x - 8, this._groundTop() - 20, 48, 0xffc477, 0.2)
+      .setDepth(17);
+    this.tweens.add({ targets: warmth, alpha: 0.5, duration: 700 });
+    this.tweens.add({ targets: this.player, x: this.child.x - 10, duration: 450 });
+    this._toast('你轻轻抱住了孩子。他停下脚步，转过身来。');
+    this.events.emit('story:hug');
   }
 
   /* ==========================================================
@@ -485,6 +525,9 @@ export default class StageScene extends Phaser.Scene {
     this.inputState = input;
 
     this.player.update(delta, input);
+    if (time < this.player.stageSlowUntil) {
+      this.player.setVelocityX(this.player.body.velocity.x * this.player.stageSlowMult);
+    }
     this.ai?.update(time, delta);
     this.xp?.update(delta);
     this.player.setDebugMeleeBox(true);
@@ -496,6 +539,11 @@ export default class StageScene extends Phaser.Scene {
     this._updateEasterEggs();
     this._updateBullets();
     this._updateParallax(delta);
+    const threatened = this.ai?.aliveMonsters().some((monster) => Math.abs(monster.x - this.player.x) < 80)
+      || this.ai?.activeBoss();
+    const resting = !threatened && !input.left && !input.right && !input.meleeHeld && !input.rangedHeld
+      && this.player.isGrounded && Math.abs(this.player.body.velocity.x) < 1;
+    tickPassiveRecovery(this.player, delta, resting);
     this._checkEnding();
     refreshHud(this, this.hud, this.player);
     this._syncHud(delta);
@@ -567,7 +615,8 @@ export default class StageScene extends Phaser.Scene {
         }
 
         egg.taken = true;
-        egg.marker.setTint(0x88ff88);
+        egg.marker.setTint?.(0x88ff88);
+        egg.marker.setAlpha(0.45);
         this._openEasterEgg(egg.id);
       }
     }
@@ -586,7 +635,16 @@ export default class StageScene extends Phaser.Scene {
       // 纸箱 → 忠犬入队（写 registry，二/三关自动继承形态）
       this.ai?.onEasterEgg('puppy-box');
     } else if (id === 'thermos') {
+      this.game.registry.set('story.thermos', true);
+      this.ai?.dog?.setForm('adult');
       this._toast('获得【暖心守护】：随从进化');
+    } else if (id === 'wedding-ring') {
+      this.game.registry.set('story.weddingRing', true);
+      if (this.ai?.dog) {
+        this.ai.dog.interceptCd = 0;
+        this.ai.dog.nextHealAt = this.time.now;
+      }
+      this._toast('婚戒的温度提醒你：有人在等你回家。');
     }
 
     const preset = EGG_BY_ID[id];

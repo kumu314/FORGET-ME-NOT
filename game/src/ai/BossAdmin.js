@@ -67,6 +67,7 @@ export class BossAdmin extends BossBase {
           vy: 0,
           angle: dir < 0 ? 180 : 0,
           texture: 'bullet_shockwave',
+          source: 'shockwave',
           damage: dmg.stamp,
           faction: 'enemy',
           life: 2.2,

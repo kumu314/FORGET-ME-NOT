@@ -100,9 +100,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.broadcastExercise = false; // 【广播体操】被动：格挡减免 70→85%
 
     // —— 升级强化（issue #17，GDD §3.1）——
-    this.attackLevels = 0; // 攻击力强化级数
-    this.critChance = 0; // 近战暴击率
-    this.hangLevels = 0; // 跳跃滞空强化级数（重力缩放）
+    // Scene 重启会创建新 Player；强化须随经验等级一起跨关继承。
+    const upgrades = scene.registry.get('playerUpgrades') ?? {};
+    this.attackLevels = Math.max(0, Math.min(LEVEL_UPGRADES.attack.maxLevels, upgrades.attackLevels ?? 0));
+    this.critChance = Math.max(0, Math.min(LEVEL_UPGRADES.crit.critCap, upgrades.critChance ?? 0));
+    this.hangLevels = Math.max(0, Math.min(LEVEL_UPGRADES.hang.maxLevels, upgrades.hangLevels ?? 0));
+    this._applyGravityScale();
 
     const maxMp = computeMpCap(this.phase, { standardAnswer: this.standardAnswer });
     this.hp = this.phase.hp;
@@ -245,6 +248,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.hangLevels = Math.min(LEVEL_UPGRADES.hang.maxLevels, this.hangLevels + 1);
       this._applyGravityScale();
     }
+    this.scene.registry.set('playerUpgrades', {
+      attackLevels: this.attackLevels,
+      critChance: this.critChance,
+      hangLevels: this.hangLevels,
+    });
     return this;
   }
 

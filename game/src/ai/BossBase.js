@@ -31,7 +31,7 @@ export class BossBase extends Phaser.Physics.Arcade.Sprite {
     this.body.setOffset((this.width - cfg.body.w) / 2, this.height - cfg.body.h);
     this.body.setAllowGravity(false);
     this.body.setVelocity(0, 0);
-    this.setDepth(5);
+    this.setDepth(16);
     this.setCollideWorldBounds(true);
 
     this.hpMax = cfg.hp;

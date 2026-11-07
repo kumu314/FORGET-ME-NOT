@@ -30,3 +30,21 @@ export function preloadMonsterSprites(loader) {
     loader.spritesheet(key, `${MONSTER_SPRITE_PATH}${key}.png`, { frameWidth: size.w, frameHeight: size.h });
   }
 }
+
+/** 两帧轻微呼吸循环；占位纹理没有数字帧，保持静态回退。 */
+export const monsterBreathKey = (texture) => `${texture}:breathe`;
+
+export function registerMonsterAnimations(scene) {
+  for (const texture of Object.keys(MONSTER_SHEETS)) {
+    const sheet = scene.textures.exists(texture) && scene.textures.get(texture);
+    if (!sheet || !sheet.has(0) || !sheet.has(1)) continue;
+    const key = monsterBreathKey(texture);
+    if (scene.anims.exists(key)) continue;
+    scene.anims.create({
+      key,
+      frames: [{ key: texture, frame: 0 }, { key: texture, frame: 1 }],
+      frameRate: 3,
+      repeat: -1,
+    });
+  }
+}

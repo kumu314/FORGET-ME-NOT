@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from './config/gameConfig.js';
 import BootScene from './scenes/BootScene.js';
 import StageScene from './scenes/StageScene.js';
+import EndingScene from './scenes/EndingScene.js';
+import { mountAudioControls } from './ui/AudioControls.js';
 
 /**
  * Phaser.Game 配置与初始化入口
@@ -43,11 +45,13 @@ const config = {
 
 /** 创建游戏实例（供入口与调试复用） */
 export function createGame() {
-  return new Phaser.Game({ ...config, scene: [BootScene, StageScene] });
+  return new Phaser.Game({ ...config, scene: [BootScene, StageScene, EndingScene] });
 }
 
 // 挂载到 window 便于 CI/调试时用脚本取状态与截图
 const game = createGame();
+const audioControls = mountAudioControls();
+game.events.once('destroy', () => audioControls.destroy());
 if (typeof window !== 'undefined') {
   window.__FORGET_ME_NOT__ = game;
 }

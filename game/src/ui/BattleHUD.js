@@ -91,7 +91,6 @@ export class BattleHUD {
     this._drawPopups(dt);
     this._drawBossBar();
     this._drawPlayerBars();
-    this._drawXpBar();
     this._drawStage();
 
     if (this.flash > 0) {

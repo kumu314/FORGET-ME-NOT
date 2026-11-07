@@ -5,7 +5,10 @@ export const SPRITE_MANIFEST_KEY = 'sprite-manifest';
 export const PLAYER_ATLAS_IDS = Object.freeze(LIFE_PHASES.map((phaseId) => `player_${phaseId}`));
 export const PROJECTILE_ATLAS_ID = 'projectiles';
 export const PROJECTILE_FRAME_SIZE = 16;
-export const SPRITE_ATLAS_IDS = Object.freeze([...PLAYER_ATLAS_IDS, PROJECTILE_ATLAS_ID]);
+export const SPRITE_ATLAS_IDS = Object.freeze([
+  ...PLAYER_ATLAS_IDS, PROJECTILE_ATLAS_ID,
+  'dog_puppy', 'dog_adult', 'dog_elder', 'boss_teacher', 'boss_employer', 'boss_child',
+]);
 
 const specKey = (atlasId) => `${atlasId}:spec`;
 const animationKey = (atlasId, animationName) => `${atlasId}:${animationName}`;
