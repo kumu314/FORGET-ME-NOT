@@ -5,12 +5,18 @@
  * 依据《游戏功能设计文档》§3 核心战斗与数值系统。
  */
 
-import { COMBAT, PHYSICS, STANDARD_ANSWER_BUFF } from '../config/gameConfig.js';
+import { COMBAT, LOVE_LETTER_BUFF, PHYSICS, STANDARD_ANSWER_BUFF } from '../config/gameConfig.js';
 
 /** 能量上限：青年 50，【标准答案】彩蛋永久提升至 80 */
 export function computeMpCap(phase, { standardAnswer = false } = {}) {
   if (standardAnswer && phase.id === 'youth') return STANDARD_ANSWER_BUFF.mpCap;
   return phase.mp;
+}
+
+/** 【怦然心动】近战加成：拾取手写情书后近战伤害 ×1.25（四舍五入取整） */
+export function applyLoveLetter(damage, loveLetter = false) {
+  if (!loveLetter) return damage;
+  return Math.round(damage * LOVE_LETTER_BUFF.meleeMultiplier);
 }
 
 /** 每秒回能：青年 2/s；【标准答案】提升至 4/s */
