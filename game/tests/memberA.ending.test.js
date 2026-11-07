@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // 结局模块不直接用 Phaser 命名空间；TypewriterTransition 一并 mock 掉
 vi.mock('phaser', () => ({ default: {} }));
@@ -47,6 +47,10 @@ function stubScene({ phaseId = 'elder', playerX = 48 } = {}) {
 const tick = (scene) => scene._handlers.update?.();
 
 describe('结局保底触发器（issue #25）', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('老年关走到世界尽头恰好触发一次结局', async () => {
     const scene = stubScene({ phaseId: 'elder', playerX: WORLD_WIDTH - 10 });
     installEndingScreen(scene);
