@@ -446,6 +446,36 @@ export default class StageScene extends Phaser.Scene {
       const monster = this.ai.spawnMonster(spec.type, spec.x, spec.y);
       this.eggHelperBugs.push({ spec, monster });
     }
+    this._initEggHelperWatch();
+  }
+
+  /**
+   * 借力怪锚点看守（issue #63 修法2）：
+   * 飞行怪追逐脱锚后 leash 回位不恢复悬停高度（X/Y 都会漂），彩蛋路线因此必坏。
+   * 玩家离得远（>150px）且怪偏离锚点（>40px）时软复位到 spec 坐标——
+   * 玩家看不到瞬移，回到谜题区时怪一定在岗位上。
+   */
+  _initEggHelperWatch() {
+    this.time.addEvent({
+      delay: 3000,
+      loop: true,
+      callback: () => {
+        if (!this.player || this.transitioning) return;
+        for (const h of this.eggHelperBugs) {
+          const m = h.monster;
+          if (!m || m.dead || !m.active) continue;
+          const playerFar =
+            Phaser.Math.Distance.Between(this.player.x, this.player.y, m.x, m.y) > 150;
+          const offPost =
+            Phaser.Math.Distance.Between(h.spec.x, h.spec.y, m.x, m.y) > 40;
+          if (playerFar && offPost) {
+            m.setPosition(h.spec.x, h.spec.y);
+            m.body?.reset(h.spec.x, h.spec.y);
+            m.setVelocity(0, 0);
+          }
+        }
+      },
+    });
   }
 
   /* ==========================================================
