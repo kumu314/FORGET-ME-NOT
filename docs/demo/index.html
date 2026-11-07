@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>忘记我 · Forget Me Not ｜ 演示入口</title>
+<style>
+  :root {
+    --bg: #0b0b10;
+    --panel: #14141c;
+    --line: #262633;
+    --ink: #e8e8e8;
+    --dim: #8b8b9a;
+    --accent: #ffd76a;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #1b1b28 0%, transparent 70%),
+      var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+      "PingFang SC", "Microsoft YaHei", monospace;
+  }
+
+  .page {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 40px 24px 56px;
+  }
+
+  /* ---------- 标题 ---------- */
+  .hd { text-align: center; margin-bottom: 28px; }
+
+  .hd h1 {
+    margin: 0;
+    font-size: clamp(26px, 4.2vw, 40px);
+    letter-spacing: .16em;
+    font-weight: 700;
+  }
+
+  .hd h1 .en {
+    display: block;
+    margin-top: 8px;
+    font-size: .42em;
+    letter-spacing: .34em;
+    color: var(--dim);
+    font-weight: 400;
+  }
+
+  .hd .sub {
+    margin: 14px 0 0;
+    font-size: 13px;
+    color: var(--dim);
+    letter-spacing: .08em;
+  }
+
+  /* ---------- 16:9 画面 ---------- */
+  .screen {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 215, 106, .06) inset;
+  }
+
+  .frame, .frame iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+
+  /* 480×270 逻辑分辨率放大时保持像素硬边 */
+  .frame iframe { image-rendering: pixelated; }
+
+  /* ---------- 就绪态的海报层（未点开始时） ---------- */
+  .idle {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #05050a url("screenshot.png") center / cover no-repeat;
+    image-rendering: pixelated;
+  }
+
+  .idle[hidden] { display: none; }
+
+  .idle::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 45%, rgba(6, 6, 12, .35), rgba(6, 6, 12, .78));
+  }
+
+  .idle p {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    padding: 10px 20px;
+    font-size: 14px;
+    letter-spacing: .16em;
+    color: var(--accent);
+    background: rgba(8, 8, 14, .72);
+    border: 1px solid rgba(255, 215, 106, .35);
+    border-radius: 4px;
+  }
+
+  /* ---------- 未构建提示态 ---------- */
+  .fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 24px;
+    text-align: center;
+    background: linear-gradient(180deg, #12121a, #0d0d13);
+  }
+
+  .fallback[hidden] { display: none; }
+
+  .fb-title {
+    margin: 0;
+    font-size: 16px;
+    color: var(--accent);
+    letter-spacing: .06em;
+  }
+
+  .fb-text { margin: 0; font-size: 13px; color: var(--ink); }
+
+  .fallback pre {
+    margin: 4px 0;
+    padding: 12px 18px;
+    background: #0a0a10;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #c9f7c9;
+    text-align: left;
+  }
+
+  .fb-note {
+    margin: 0;
+    max-width: 62ch;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--dim);
+  }
+
+  code { font-family: inherit; }
+
+  /* ---------- 操作条 ---------- */
+  .bar {
+    margin-top: 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn {
+    appearance: none;
+    cursor: pointer;
+    padding: 13px 34px;
+    font: inherit;
+    font-size: 15px;
+    letter-spacing: .12em;
+    color: #17171f;
+    background: var(--accent);
+    border: 1px solid #ffe9a8;
+    border-radius: 6px;
+    box-shadow: 0 6px 0 #b8912f;
+    transition: transform .08s ease, box-shadow .08s ease, filter .15s ease;
+  }
+
+  .btn:hover:not(:disabled) { filter: brightness(1.06); }
+
+  .btn:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #b8912f;
+  }
+
+  .btn:disabled {
+    cursor: not-allowed;
+    color: #6f6f7d;
+    background: #23232e;
+    border-color: #3a3a48;
+    box-shadow: none;
+  }
+
+  .hint {
+    margin: 0;
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: .04em;
+  }
+
+  .foot {
+    margin-top: 34px;
+    text-align: center;
+    font-size: 11px;
+    color: #5f5f6e;
+    line-height: 1.9;
+  }
+</style>
+</head>
+<body>
+  <main class="page">
+    <header class="hd">
+      <h1>忘记我<span class="en">FORGET ME NOT</span></h1>
+      <p class="sub">HENU Hackathon 参赛作品</p>
+    </header>
+
+    <section class="screen" id="screen">
+      <div class="frame" id="frame"></div>
+
+      <div class="idle" id="idle">
+        <p>点击下方 ▶ 开始游戏</p>
+      </div>
+
+      <div class="fallback" id="fallback" hidden>
+        <p class="fb-title">还没找到可运行的游戏包</p>
+        <p class="fb-text">请先在 <code>game/</code> 目录执行：</p>
+        <pre><code>npm ci
+npm run build</code></pre>
+        <p class="fb-note" id="fbNote">构建完成后刷新本页，即可开始游戏。</p>
+      </div>
+    </section>
+
+    <div class="bar">
+      <button class="btn" id="start" type="button" disabled>检测中…</button>
+      <p class="hint" id="hint">A / D 移动 · Space 跳跃 · S 格挡 · J 近战 · L 远程</p>
+    </div>
+
+    <p class="foot">
+      逻辑分辨率 480×270 · 最近邻像素缩放 · 纯静态，无需联网<br />
+      首次点击后浏览器才会允许播放声音
+    </p>
+  </main>
+
+<script>
+(function () {
+  'use strict';
+
+  var GAME_URL = '../../game/dist/index.html';
+
+  var btn = document.getElementById('start');
+  var frame = document.getElementById('frame');
+  var idle = document.getElementById('idle');
+  var fallback = document.getElementById('fallback');
+  var fbNote = document.getElementById('fbNote');
+
+  /**
+   * 探测构建产物是否存在。
+   * 先 HEAD，部分静态服务器禁用 HEAD（405/501）时退回 GET。
+   * 任何异常都当作"不存在"，交给提示态，绝不把 404 白屏甩给评审。
+   */
+  function probe(url) {
+    return fetch(url, { method: 'HEAD', cache: 'no-store' })
+      .then(function (res) {
+        if (res.ok) return true;
+        if (res.status === 405 || res.status === 501) {
+          return fetch(url, { method: 'GET', cache: 'no-store' }).then(function (r) { return r.ok; });
+        }
+        return false;
+      })
+      .catch(function () { return false; });
+  }
+
+  function showMissing(note) {
+    fallback.hidden = false;
+    idle.hidden = true;
+    frame.hidden = true;
+    btn.disabled = true;
+    btn.textContent = '未找到 game/dist';
+    if (note) fbNote.textContent = note;
+  }
+
+  function showReady() {
+    fallback.hidden = true;
+    idle.hidden = false;
+    frame.hidden = false;
+    btn.disabled = false;
+    btn.textContent = '\u25B6 开始游戏';
+  }
+
+  function startGame() {
+    btn.disabled = true;
+    btn.textContent = '载入中…';
+    fallback.hidden = true;
+    idle.hidden = true;
+    frame.hidden = false;
+
+    var iframe = document.createElement('iframe');
+    iframe.title = '忘记我 Forget Me Not';
+    iframe.setAttribute('allow', 'autoplay');
+    iframe.src = GAME_URL;
+
+    iframe.addEventListener('load', function () {
+      btn.disabled = false;
+      btn.textContent = '\u21BB 重新载入';
+      // 关键：焦点必须进到 canvas，否则 A/D 按键打不到游戏
+      try { iframe.contentWindow.focus(); } catch (e) { /* 跨域时忽略 */ }
+    }, { once: true });
+
+    // 兜底：用户点画面任意处也把焦点交还给游戏
+    iframe.addEventListener('pointerdown', function () {
+      try { iframe.contentWindow.focus(); } catch (e) { /* 忽略 */ }
+    });
+
+    frame.replaceChildren(iframe);
+  }
+
+  btn.addEventListener('click', startGame);
+
+  // file:// 下浏览器会拦截 fetch（也拦 ES module），直接给可执行的指引
+  if (location.protocol === 'file:') {
+    showMissing(
+      '当前是用 file:// 直接打开的，浏览器会拦截本地文件检测。' +
+      '请在仓库根目录执行 npx serve . ，再访问 /docs/demo/ 打开本页。'
+    );
+    return;
+  }
+
+  probe(GAME_URL).then(function (ok) {
+    if (ok) showReady();
+    else showMissing();
+  });
+})();
+</script>
+</body>
+</html>
