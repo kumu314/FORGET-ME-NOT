@@ -11,6 +11,7 @@ import { audio } from '../audio/AudioManager.js';
 import { mountBattleHud } from '../ui/HudOverlay.js';
 import { EasterEggModal, EGG_PRESETS } from '../ui/EasterEggModal.js';
 import { TypewriterTransition, TRANSITION_PRESETS } from '../ui/TypewriterTransition.js';
+import { installEndingScreen } from '../ui/EndingScreen.js';
 
 /**
  * 关卡场景（成员C：关卡碰撞检测与检查点复活 / 成员D：AI 接线 / 成员E：HUD·弹窗·音频·转场）
@@ -118,6 +119,7 @@ export default class StageScene extends Phaser.Scene {
 
     this.hud = createHud(this);
     this._initUiModules();
+    installEndingScreen(this); // 结局保底（issue #25）：老年关走到尽头 → 黑屏打字机结局
 
     this.cameras.main.startFollow(this.player, true, 0.2, 0.2);
     this.cameras.main.setDeadzone(60, 40);
