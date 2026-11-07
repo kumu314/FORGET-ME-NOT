@@ -70,6 +70,7 @@ export default class StageScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.2, 0.2);
     this.cameras.main.setDeadzone(60, 40);
 
+    this._buildDemoGuide();
     this._bindDebugKeys();
     this.inputCtl = new InputController(this);
 
@@ -159,6 +160,7 @@ export default class StageScene extends Phaser.Scene {
     this._onBossDefeated = ({ kind }) => {
       this.cameras.main.flash(420, 255, 240, 190);
       this._toast(kind === 'teacher' ? '下课铃响了——交卷吧' : '暴雨停了');
+      this._showVictoryBanner(kind);
     };
     this.events.on('ai:boss:defeated', this._onBossDefeated, this);
   }
@@ -179,7 +181,11 @@ export default class StageScene extends Phaser.Scene {
     // 注意：input.keyboard 是全局插件，scene.restart() 不会自动解绑，
     // 所以这里保存函数引用，在 _teardown() 里成对 off 掉，否则每次重开都会多绑一次。
     this._onKeyT = () => this._cyclePhase();
-    this._onKeyR = () => this.player?.respawn(this._activeCheckpoint());
+    this._onKeyR = () => {
+      this._hideDeathOverlay();
+      this.player?.respawn(this._activeCheckpoint());
+      this.respawnPending = false;
+    };
     kb.on('keydown-T', this._onKeyT);
     kb.on('keydown-R', this._onKeyR);
   }
@@ -287,7 +293,9 @@ export default class StageScene extends Phaser.Scene {
     if (this.respawnPending) return;
     this.respawnPending = true;
     this.cameras.main.shake(180, 0.008);
-    this.time.delayedCall(PHYSICS.respawnDelayMs, () => {
+    this._showDeathOverlay();
+    this.time.delayedCall(PHYSICS.respawnDelayMs + 600, () => {
+      this._hideDeathOverlay();
       this.player.respawn(this._activeCheckpoint());
       this.respawnPending = false;
     });
@@ -297,22 +305,38 @@ export default class StageScene extends Phaser.Scene {
   // 反馈
   // ==========================================================
 
-  _showDamageText(info, color = '#ff8888', x = null, y = null) {
-    const label = this.add
-      .text(x ?? this.player.x, (y ?? this.player.y) - 26, `-${info.damage}`, {
+  _showDeathOverlay() {
+    this.deathOverlay = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(5000);
+    this.deathText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, '按 R 复活', {
         fontFamily: 'monospace',
-        fontSize: '9px',
-        color,
-      })
-      .setOrigin(0.5)
-      .setDepth(2000);
-    this.tweens.add({
-      targets: label,
-      y: label.y - 14,
-      alpha: 0,
-      duration: 520,
-      onComplete: () => label.destroy(),
-    });
+        fontSize: '12px',
+        color: '#ffffff'
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(5001);
+  }
+
+  _hideDeathOverlay() {
+    this.deathOverlay?.destroy();
+    this.deathText?.destroy();
+    this.deathOverlay = null;
+    this.deathText = null;
+  }
+
+  _showVictoryBanner(kind) {
+    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 20, kind === 'teacher' ? '课程结束' : '雨过天晴', {
+        fontFamily: 'monospace',
+        fontSize: '16px',
+        color: '#ffffff'
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(6000);
+  }
+
+  _buildDemoGuide() {
+    const guide = this.add.text(10, 30, 'Demo版: 使用T键体验不同生命阶段', {
+        fontFamily: 'monospace', fontSize: '9px', color: '#88cc88'
+    }).setScrollFactor(0).setDepth(2000);
+    this.tweens.add({ targets: guide, alpha: 0, duration: 3000, delay: 2000 });
   }
 
   /** 老年按 Space：只冒一个咳嗽气泡，绝不产生竖直速度 */
