@@ -8,13 +8,17 @@
 
 - `main`：**发布主干**。只存放可演示、无报错的版本；develop 阶段性整体测试通过后，由技术负责人统一发 PR 合入。
 - `develop`：**集成主干**。所有功能 PR 的唯一目标分支，全员在此集成。
-- 五条成员长驻分支（常驻不删，职责见分工规范）：
-  - `feat/member-A-characters`（角色 / Boss / 随从美术）
-  - `feat/member-B-environments`（瓦片 / 场景 / 彩蛋物件）
-  - `feat/member-C-player-core`（主角控制 / 物理 / 数值）
-  - `feat/member-D-ai-companion`（小怪 FSM / 忠犬 / Boss AI）
-  - `feat/member-E-ui-audio`（HUD / 弹窗 / 音频 / 转场）
-- 临时分支（`docs/`、`fix/`、`hotfix/` + 短名）：修完即删。
+- 工作分支一律**按功能短命**：从最新 develop 切出，Squash 合并后即删，命名 = 成员专属前缀 + 短名（职责分区见分工规范）：
+
+  | 成员 | 专属前缀 | 示例 |
+  |---|---|---|
+  | A 角色/Boss/随从美术 | `assets/member-A-char-` | `assets/member-A-char-player-sprites` |
+  | B 瓦片/场景 | `assets/member-B-env-` | `assets/member-B-env-stage1-tiles` |
+  | C 主角控制/物理 | `feat/member-C-player-` | `feat/member-C-player-combat` |
+  | D 怪物/忠犬/Boss AI | `feat/member-D-ai-` | `feat/member-D-ai-dog-companion` |
+  | E HUD/弹窗/音频 | `feat/member-E-ui-` | `feat/member-E-ui-battle-hud` |
+
+- 文档/临时分支（`docs/`、`fix/`、`hotfix/` + 短名）：修完即删。
 - **严禁**功能 PR 把 base 设为 `main`。
 
 ## 提 PR 之前（自查四条）
@@ -45,12 +49,12 @@ PR 动了以下任一项，开 PR 时在团队群报备一声、等回应再合�
 
 - `feature → develop`：**至少 1 名成员 approve**（美术组 A/B 互审资源规格；程序组 C/D/E 互审变量冲突与全局污染），Squash and merge。
 - `develop → main`：阶段性整体测试通过后由**技术负责人**统一发 PR 合并；`main` 任何时候不走直推。
-- 短命分支合并后即删；五条长驻分支常驻。
+- 工作分支合并后即删，下次开工从最新 `develop` 重新切出。
 - 冲突在自己分支上解决，不在 develop / main 上解决。
 
 ## Commit 格式
 
-`feat(member-X): 做了什么`；非功能改动用 `fix:` / `docs:` / `chore:` 前缀。
+`feat(member-X): 做了什么`；非功能改动用 `fix:` / `docs:` / `chore:` / `assets:` / `ui:` 前缀。
 
 ## 冲刺应急条款
 
