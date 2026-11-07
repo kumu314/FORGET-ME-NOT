@@ -47,7 +47,7 @@
 
 ## 快速开始
 
-> 游戏工程位于 **`game/`** 目录，先 `cd game` 再执行以下命令。
+> 脚手架由成员 C 提供（PR #7），以下命令**在 `game/` 目录内执行**：
 
 ```bash
 cd game
@@ -60,15 +60,24 @@ npm run build    # 产出纯静态文件到 game/dist
 ## 项目结构
 
 ```
-├── index.html                  # Canvas 挂载根节点
-├── package.json                # phaser ^3.90 / vite ^5 / vitest ^2
-└── src/
-    ├── main.js                 # Phaser.Game 初始化入口
-    ├── config/                 # 关卡数值、按键常量、三关地形数据
-    ├── entities/               # Player、飞行道具、战斗数值（成员 C）
-    ├── ai/                     # 小怪 FSM、忠犬、Boss（成员 D）
-    ├── ui/                     # 战斗 HUD、彩蛋弹窗（成员 E）
-    └── scenes/                 # Boot + 关卡场景（全员协作）
+├── docs/                   # 设计文档与协作规范（GDD / 分工 / 评审）
+└── game/                   # Phaser 工程（Vite 根，路径约定见分工规范 §4）
+    ├── index.html          # Canvas 挂载根节点
+    ├── package.json        # phaser ^3.90 / vite ^5 / vitest ^2
+    ├── vite.config.js      # Vite 构建与 dev server
+    ├── public/assets/      # 静态资源免编译专区
+    │   ├── sprites/        # 角色/小怪/忠犬/Boss 精灵图（成员 A）
+    │   ├── tilesets/       # 瓦片集 + Tiled 关卡数据 + 彩蛋物件（成员 B）
+    │   └── audio/          # 8-bit 音效与 BGM（成员 E）
+    ├── tests/              # 纯逻辑单测（成员 C，与其他模块按需扩展）
+    └── src/
+        ├── main.js         # Phaser.Game 初始化入口
+        ├── config/         # 关卡数值、按键常量、三关地形数据
+        ├── core/           # 输入层（成员 C）
+        ├── entities/       # Player、飞行道具、战斗数值（成员 C）
+        ├── ai/             # 小怪 FSM、忠犬、Boss（成员 D）
+        ├── ui/             # 战斗 HUD、彩蛋弹窗（成员 E）
+        └── scenes/         # Boot + 关卡场景（全员协作）
 ```
 
 以上路径均相对于 `game/`。静态资源放 `game/public/assets/`（`sprites/` 成员A · `tilesets/` 成员B · `audio/` 成员E），Vite 会原样拷贝到 `game/dist/assets/` 并可被浏览器直接访问。

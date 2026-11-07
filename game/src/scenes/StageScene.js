@@ -182,10 +182,12 @@ export default class StageScene extends Phaser.Scene {
   _bindDebugKeys() {
     const kb = this.input.keyboard;
     if (!kb) return;
-    kb.on('keydown-T', () => this._cyclePhase());
-    kb.on('keydown-R', () => {
-      this.player?.respawn(this._activeCheckpoint());
-    });
+    // 注意：input.keyboard 是全局插件，scene.restart() 不会自动解绑，
+    // 所以这里保存函数引用，在 _teardown() 里成对 off 掉，否则每次重开都会多绑一次。
+    this._onKeyT = () => this._cyclePhase();
+    this._onKeyR = () => this.player?.respawn(this._activeCheckpoint());
+    kb.on('keydown-T', this._onKeyT);
+    kb.on('keydown-R', this._onKeyR);
   }
 
   /** T 键：青年 → 中年 → 老年循环，用于演示生命周期数值与禁跳 */
@@ -387,6 +389,15 @@ export default class StageScene extends Phaser.Scene {
   }
 
   _teardown() {
+    // 解绑调试键，避免 scene.restart() 累积监听器导致 T/R 被触发多次
+    const kb = this.input?.keyboard;
+    if (kb) {
+      if (this._onKeyT) kb.off('keydown-T', this._onKeyT);
+      if (this._onKeyR) kb.off('keydown-R', this._onKeyR);
+    }
+    this._onKeyT = null;
+    this._onKeyR = null;
+
     this.inputCtl?.destroy();
     this.inputCtl = null;
     this.bullets = [];
