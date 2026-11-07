@@ -550,6 +550,11 @@ export default class StageScene extends Phaser.Scene {
   // ==========================================================
 
   update(time, delta) {
+    // 玩家尚未建好（create 未完成 / 已销毁 / 切关重启的中间帧）时整帧跳过。
+    // 不加这条会在 this.player.update() 处抛 TypeError: reading 'update'，
+    // 被 main.js 的全局 error 兜底捕获后弹出「游戏遇到异常」遮罩盖住画面。
+    if (!this.player) return;
+
     // 彩蛋弹窗 / 转场期间冻结玩法，只继续刷 HUD
     if (this.modalOpen || this.transitioning) {
       this._syncHud(delta);
