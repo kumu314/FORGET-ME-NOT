@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>忘记我 · Forget Me Not</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #0b0b10;
+        overflow: hidden;
+        /* 像素风：禁止长按选中与系统菜单 */
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+      #game-root {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #game-root canvas {
+        image-rendering: pixelated;
+        image-rendering: crisped-edges;
+      }
+      noscript {
+        color: #ddd;
+        font: 14px/1.6 system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-root"></div>
+    <noscript>《忘记我》需要启用 JavaScript 才能运行。</noscript>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
