@@ -17,3 +17,6 @@ Thumbs.db
 *.log
 .idea/
 .vscode/
+
+# 美术生成脚本的中间产物（tools/*.ps1 写入，不入库）
+tools/_style_ref/
