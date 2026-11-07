@@ -1,3 +1,8 @@
+import { SCORES, scoreStep } from './scores.js';
+
+const clampVolume = (value, fallback) => Number.isFinite(Number(value))
+  ? Math.max(0, Math.min(1, Number(value))) : fallback;
+
 /**
  * AudioManager —— 8-bit / 16-bit 芯片音效引擎（成员 E 交付模块）
  *
@@ -20,7 +25,7 @@
  *   audio.play('pickup');     // 拾取光球          audio.play('crit');   // 暴击
  *   audio.play('egg');        // 彩蛋解锁          audio.play('ui');     // 界面
  *   audio.play('typing');     // 打字机滴答
- *   audio.startBgm('stage1'); // 占位 BGM           audio.stopBgm();
+ *   audio.startBgm('stage1'); // 原创三关 BGM       audio.stopBgm();
  *
  *   // 正式版替换：用真实素材覆盖合成音
  *   await audio.loadSound('hit', 'assets/audio/sfx_hit.wav');
@@ -70,23 +75,38 @@ export class AudioManager {
     this.master = null;
     this.muted = false;
     this.volume = 0.7;
+    this.musicVolume = 0.65;
+    this.effectsVolume = 0.8;
+    this.music = null;
+    this.effects = null;
     this.custom = new Map();      // name -> AudioBuffer（真实素材注册表）
     this._bgmTimer = null;
     this._bgmStep = 0;
+    this._bgmSources = new Set();
     try {
       const saved = localStorage.getItem('fm-audio-vol');
-      if (saved !== null) this.volume = Math.max(0, Math.min(1, parseFloat(saved)));
+      if (saved !== null) this.volume = clampVolume(saved, this.volume);
+      const settings = JSON.parse(localStorage.getItem('fm-audio-settings') || '{}');
+      this.musicVolume = clampVolume(settings.music ?? this.musicVolume, this.musicVolume);
+      this.effectsVolume = clampVolume(settings.effects ?? this.effectsVolume, this.effectsVolume);
+      this.muted = settings.muted === true;
     } catch { /* 无 localStorage 环境（如 Node）忽略 */ }
   }
 
   /** 创建 AudioContext。首次必须由用户手势触发（见 unlock）。 */
   init() {
     if (this.ctx) return;
-    const AC = window.AudioContext || window.webkitAudioContext;
+    const AC = globalThis.window?.AudioContext || globalThis.window?.webkitAudioContext;
     if (!AC) { console.warn('[AudioManager] 当前环境不支持 Web Audio'); return; }
     this.ctx = new AC();
     this.master = this.ctx.createGain();
     this.master.gain.value = this.muted ? 0 : this.volume;
+    this.music = this.ctx.createGain();
+    this.effects = this.ctx.createGain();
+    this.music.gain.value = this.musicVolume;
+    this.effects.gain.value = this.effectsVolume;
+    this.music.connect(this.master);
+    this.effects.connect(this.master);
     // 总线加一级软压缩：削峰、圆滑瞬态，整体听感更柔和
     this.comp = this.ctx.createDynamicsCompressor();
     this.comp.threshold.value = -18;
@@ -122,7 +142,7 @@ export class AudioManager {
   }
 
   setVolume(v) {
-    this.volume = Math.max(0, Math.min(1, v));
+    this.volume = clampVolume(v, this.volume);
     if (this.master) this.master.gain.value = this.muted ? 0 : this.volume;
     try { localStorage.setItem('fm-audio-vol', String(this.volume)); } catch { /* ignore */ }
   }
@@ -130,6 +150,27 @@ export class AudioManager {
   setMuted(m) {
     this.muted = !!m;
     if (this.master) this.master.gain.value = this.muted ? 0 : this.volume;
+    this._saveSettings();
+  }
+
+  setMusicVolume(value) {
+    this.musicVolume = clampVolume(value, this.musicVolume);
+    if (this.music) this.music.gain.value = this.musicVolume;
+    this._saveSettings();
+  }
+
+  setEffectsVolume(value) {
+    this.effectsVolume = clampVolume(value, this.effectsVolume);
+    if (this.effects) this.effects.gain.value = this.effectsVolume;
+    this._saveSettings();
+  }
+
+  _saveSettings() {
+    try {
+      localStorage.setItem('fm-audio-settings', JSON.stringify({
+        music: this.musicVolume, effects: this.effectsVolume, muted: this.muted,
+      }));
+    } catch { /* ignore */ }
   }
 
   /** 注册真实音频素材；注册后 play 优先使用素材而非合成音。 */
@@ -137,6 +178,7 @@ export class AudioManager {
     this.init();
     if (!this.ctx) return;
     const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Audio HTTP ${resp.status}: ${url}`);
     const buf = await resp.arrayBuffer();
     const decoded = await this.ctx.decodeAudioData(buf);
     this.custom.set(name, decoded);
@@ -178,7 +220,7 @@ export class AudioManager {
     src.loop = true;
     const gain = this.ctx.createGain();
     gain.gain.value = volume;
-    src.connect(gain).connect(this.master);
+    src.connect(gain).connect(this.effects);
     src.start();
     return () => { try { src.stop(); } catch { /* 已停止 */ } };
   }
@@ -188,7 +230,9 @@ export class AudioManager {
     this.init();
     if (!this.ctx || this.muted) return;
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume().then(() => this._dispatch(name, opts));
+      this.ctx.resume().then(() => {
+        if (!this.muted) this._dispatch(name, opts);
+      }).catch(() => {});
       return;
     }
     this._dispatch(name, opts);
@@ -198,7 +242,7 @@ export class AudioManager {
     const buffer = this.custom.get(name);
     if (buffer) { this._playBuffer(buffer, opts); return; }
     const synth = this._synths[name];
-    if (synth) synth.call(this, this.ctx, this.master, opts);
+    if (synth) synth.call(this, this.ctx, this.effects, opts);
   }
 
   _playBuffer(buffer, { volume = 1, playbackRate = 1 } = {}) {
@@ -207,14 +251,14 @@ export class AudioManager {
     src.playbackRate.value = playbackRate;
     const gain = this.ctx.createGain();
     gain.gain.value = volume;
-    src.connect(gain).connect(this.master);
+    src.connect(gain).connect(this.effects);
     src.start();
   }
 
   /** 基础音色：振荡器 + 频率滑音 + 起音/衰减包络 */
-  _tone({ type = 'square', f0 = 440, f1 = f0, dur = 0.1, vol = 0.5, at = 0.004, rel = 0.04, delay = 0 }) {
+  _tone({ type = 'square', f0 = 440, f1 = f0, dur = 0.1, vol = 0.5, at = 0.004, rel = 0.04, delay = 0, when, destination = this.effects, cutoff }) {
     const ctx = this.ctx;
-    const t0 = ctx.currentTime + delay;
+    const t0 = when ?? ctx.currentTime + delay;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = type;
@@ -223,7 +267,19 @@ export class AudioManager {
     gain.gain.setValueAtTime(0.0001, t0);
     gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t0 + at);
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + rel);
-    osc.connect(gain).connect(this.master);
+    if (cutoff) {
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = cutoff;
+      osc.connect(filter).connect(gain);
+    } else {
+      osc.connect(gain);
+    }
+    gain.connect(destination);
+    if (destination === this.music) {
+      this._bgmSources.add(osc);
+      osc.onended = () => this._bgmSources.delete(osc);
+    }
     osc.start(t0);
     osc.stop(t0 + dur + rel + 0.02);
   }
@@ -246,7 +302,7 @@ export class AudioManager {
     gain.gain.setValueAtTime(0.0001, t0);
     gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t0 + at);
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    src.connect(filter).connect(gain).connect(this.master);
+    src.connect(filter).connect(gain).connect(this.effects);
     src.start(t0);
   }
 
@@ -303,42 +359,39 @@ export class AudioManager {
     typing() { this._tone({ type: 'square', f0: 2100, f1: 2000, dur: 0.015, vol: 0.06, rel: 0.01 }); },
   };
 
-  /**
-   * 占位芯片 BGM 循环：原创 8 小节进行（120 BPM，八分音符步进），
-   * 仅作开发期氛围占位；正式版本请用成品 BGM 循环替换。
-   */
+  /** 原创八小节循环；按 AudioContext 时钟预排，挂起期间不推进乐谱。 */
   startBgm(key = 'stage1') {
     this.init();
-    if (!this.ctx || this._bgmTimer) return;
-    const stepDur = 60 / 120 / 2; // 八分音符 0.25s
-    const bass = [130.8, 110.0, 87.3, 98.0];
-    const lead = [
-      [261.6, 329.6, 392.0, 523.3],
-      [220.0, 261.6, 329.6, 440.0],
-      [174.6, 220.0, 261.6, 349.2],
-      [196.0, 246.9, 293.7, 392.0],
-    ];
-    const playStep = () => {
-      const bar = Math.floor(this._bgmStep / 8) % 4;
-      const stepInBar = this._bgmStep % 8;
-      if (stepInBar % 2 === 0) {
-        this._tone({ type: 'square', f0: lead[bar][stepInBar / 2], dur: stepDur * 0.9, vol: 0.055, at: 0.005, rel: 0.02 });
+    if (!this.ctx || !SCORES[key]) return;
+    if (this._bgmTimer !== null && this._bgmKey === key) return;
+    this.stopBgm();
+    this._bgmKey = key;
+    this._bgmNextTime = this.ctx.currentTime;
+    const schedule = () => {
+      if (this.ctx.state !== 'running') return;
+      this._bgmNextTime = Math.max(this._bgmNextTime, this.ctx.currentTime);
+      while (this._bgmNextTime < this.ctx.currentTime + 0.12) {
+        const { duration, notes } = scoreStep(key, this._bgmStep);
+        for (const note of notes) this._tone({ ...note, when: this._bgmNextTime, destination: this.music });
+        this._bgmNextTime += duration;
+        this._bgmStep = (this._bgmStep + 1) % 64;
       }
-      if (stepInBar === 0) {
-        this._tone({ type: 'triangle', f0: bass[bar], dur: stepDur * 7.5, vol: 0.09, at: 0.01, rel: 0.05 });
-      }
-      this._bgmStep++;
     };
-    playStep();
-    this._bgmTimer = setInterval(playStep, stepDur * 1000);
+    schedule();
+    this._bgmTimer = setInterval(schedule, 25);
   }
 
   stopBgm() {
-    if (this._bgmTimer) {
+    if (this._bgmTimer !== null) {
       clearInterval(this._bgmTimer);
       this._bgmTimer = null;
-      this._bgmStep = 0;
     }
+    for (const source of this._bgmSources) {
+      try { source.stop(); } catch { /* 已结束 */ }
+    }
+    this._bgmSources.clear();
+    this._bgmStep = 0;
+    this._bgmKey = null;
   }
 }
 
