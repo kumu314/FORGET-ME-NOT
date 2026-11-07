@@ -37,6 +37,19 @@ const EGG_BY_ID = {
   'puppy-box': EGG_PRESETS.dog,
   'standard-answer': EGG_PRESETS.answer,
   thermos: EGG_PRESETS.cup,
+  // 彩蛋1 手写情书（issue #16）：GDD 未给原文，按 §5.5 回忆章节基调补写
+  'love-letter': {
+    key: 'letter',
+    title: '桌洞里的手写情书',
+    icon: '💌',
+    theme: 'paper',
+    lines: [
+      '课桌的桌洞深处压着一封没有署名的信，',
+      '信纸边角已经被摩挲得起了毛边。',
+      '“谢谢你总是最后一个走，替我把窗户关好。”',
+    ],
+    reward: '获得永久增益【怦然心动】：近战伤害 +25%',
+  },
 };
 
 /** 第三关走到公园尽头的触发线（孩子终局 Boss 未实装前的保底结局） */
@@ -60,6 +73,7 @@ export default class StageScene extends Phaser.Scene {
     this.inputState = createIdleState();
     this.modalOpen = false;
     this.transitioning = false;
+    this.eggHelperBugs = [];
   }
 
   /**
@@ -82,6 +96,7 @@ export default class StageScene extends Phaser.Scene {
     this.endingPlayed = false;
     this.lastHitSfxAt = 0;
     this.aiListeners = [];
+    this.eggHelperBugs = [];
   }
 
   create() {
@@ -94,6 +109,7 @@ export default class StageScene extends Phaser.Scene {
 
     this._buildTerrain();
     this._buildCheckpoints();
+    this._buildBreakables();
     this._buildEasterEggs();
     this._spawnPlayer();
     this._initAI();
@@ -170,7 +186,21 @@ export default class StageScene extends Phaser.Scene {
       }
     });
 
-    on('ai:kill', () => audio.play('pickup'));
+    on('ai:kill', (info) => {
+      audio.play('pickup');
+      // 解谜借力怪被误杀 → 延时重生，保证"飞踢借力上横梁"路线永不软锁（issue #16）
+      const helper = (this.eggHelperBugs || []).find(
+        (h) => h.spec.type === info?.type && Math.abs(h.spec.x - (info?.x ?? 0)) < 48,
+      );
+      if (helper) {
+        helper.monster = null;
+        this.time.delayedCall(helper.spec.respawnMs ?? 2500, () => {
+          if (this.scene.isActive() && this.ai) {
+            helper.monster = this.ai.spawnMonster(helper.spec.type, helper.spec.x, helper.spec.y);
+          }
+        });
+      }
+    });
     on('ai:dog:bark', () => audio.play('bark'));
     on('ai:dog:bite', () => audio.play('bark_attack'));
     on('ai:dog:heal', ({ amount }) => {
@@ -199,7 +229,10 @@ export default class StageScene extends Phaser.Scene {
 
     for (const s of this.layout.solids) {
       const key = SOLID_TEXTURE[s.kind] ?? SOLID_TEXTURE.ground;
-      this.add.tileSprite(s.x, s.y, s.w, s.h, key).setOrigin(0, 0).setDepth(10);
+      // 第一关由 tiles 数据负责贴图（B 的瓦片），其余关沿用占位纹理
+      if (this.layout.tiles.length === 0) {
+        this.add.tileSprite(s.x, s.y, s.w, s.h, key).setOrigin(0, 0).setDepth(10);
+      }
 
       // 碰撞体用不可见矩形直接建静态体：体积天然等于地形矩形。
       // 不能用 staticImage + setSize + refreshBody —— refreshBody() 会把刚设好的
@@ -221,6 +254,38 @@ export default class StageScene extends Phaser.Scene {
           .setDepth(11);
       }
     }
+
+    this._paintTiles();
+  }
+
+  /** 数据驱动上墙（issue #16）：{ t: 帧名, x, y, w?, h? }，按"墙带→道具→地面"次序绘制，后画盖先画 */
+  _paintTiles() {
+    for (const op of this.layout.tiles) {
+      const cols = op.w ?? 1;
+      const rows = op.h ?? 1;
+      if (cols > 1 || rows > 1) {
+        // 跑排瓦片：用 tileSprite 平铺，Phaser 会为图集帧生成填充纹理
+        this.add
+          .tileSprite(op.x, op.y, cols * 16, rows * 16, 'school_corridor', op.t)
+          .setOrigin(0, 0)
+          .setDepth(10);
+      } else {
+        this.add.image(op.x, op.y, 'school_corridor', op.t).setOrigin(0, 0).setDepth(10);
+      }
+    }
+  }
+
+  /** 可打碎物（issue #16）：近战命中 → 换帧/散纸 → 掉落彩蛋 */
+  _buildBreakables() {
+    this.breakables = this.layout.breakables.map((b) => {
+      if (b.kind === 'paper-pile') {
+        const books = this.add.image(b.x - 12, 216, 'school_corridor', 'books_stack').setOrigin(0, 0).setDepth(11);
+        const scraps = this.add.image(b.x + 4, 224, 'school_corridor', 'paper_scrap').setOrigin(0, 0).setDepth(11);
+        return { ...b, parts: [books, scraps], smashed: false };
+      }
+      // 纸箱贴图归 _buildEasterEggs 的 puppy-box 彩蛋管理，这里只登记判定点
+      return { ...b, parts: [], smashed: false };
+    });
   }
 
   _buildCheckpoints() {
@@ -234,7 +299,38 @@ export default class StageScene extends Phaser.Scene {
 
   _buildEasterEggs() {
     this.easterEggs = this.layout.easterEggs.map((egg) => {
-      const marker = this.add.image(egg.x, egg.y - 8, 'ph_easter').setDepth(12);
+      // B 的正式彩蛋贴图就位后按 id 换装；缺失时回退占位方块
+      let marker;
+      if (egg.id === 'puppy-box' && this.textures.exists('easter_eggs')) {
+        marker = this.add.image(egg.x, egg.y - 16, 'easter_eggs', 'box_closed').setDepth(12);
+        // 封条未碎时轻微颤动（B 的 tremble 帧交替，GDD §4.4 "纸箱微微颤动"）
+        this.time.addEvent({
+          delay: 420,
+          loop: true,
+          callback: () => {
+            const live = this.easterEggs?.find((e) => e.id === egg.id);
+            if (!live?.smashed && marker.active) {
+              marker.setTexture('easter_eggs', Math.random() < 0.5 ? 'box_tremble_a' : 'box_tremble_b');
+            }
+          },
+        });
+      } else if (egg.id === 'standard-answer' && this.textures.exists('easter_eggs')) {
+        marker = this.add.image(egg.x, egg.y - 8, 'easter_eggs', 'answer_card_a').setDepth(12);
+        this.time.addEvent({
+          delay: 380,
+          loop: true,
+          callback: () => {
+            if (marker.active) {
+              marker.setTexture(
+                'easter_eggs',
+                marker.frame.name === 'answer_card_a' ? 'answer_card_b' : 'answer_card_a',
+              );
+            }
+          },
+        });
+      } else {
+        marker = this.add.image(egg.x, egg.y - 8, 'ph_easter').setDepth(12);
+      }
       this.tweens.add({
         targets: marker,
         y: marker.y - 3,
@@ -243,7 +339,7 @@ export default class StageScene extends Phaser.Scene {
         repeat: -1,
         ease: 'Sine.inOut',
       });
-      return { ...egg, marker, taken: false };
+      return { ...egg, marker, taken: false, smashed: false };
     });
   }
 
@@ -256,7 +352,8 @@ export default class StageScene extends Phaser.Scene {
         audio.play('throw');
         this._fireBullet(shot);
       },
-      onMeleeHit: null,
+      // 近战结算入口：先打碎场景可碎物，AIManager 会在 installPlayerHooks 里链上小怪结算
+      onMeleeHit: (info) => this._onPlayerMelee(info),
       onDamaged: (info) => this._onPlayerDamaged(info),
       onDeath: () => this._onPlayerDeath(),
     });
@@ -272,6 +369,7 @@ export default class StageScene extends Phaser.Scene {
       groundY: this._groundTop(),
     });
     this.ai.applyStage(this.phaseId);
+    this._spawnEggHelpers();
 
     // Boss 战结算：胜利标识 → 打字机转场 → 下一关
     this._onBossDefeated = ({ kind }) => {
@@ -289,6 +387,14 @@ export default class StageScene extends Phaser.Scene {
   _groundTop() {
     const ground = this.layout.solids.filter((s) => s.kind === 'ground');
     return ground.length ? Math.min(...ground.map((s) => s.y)) : 240;
+  }
+
+  /** 彩蛋解谜浮空借力怪（stageLayout.eggHelpers，y 为显式悬停高度；issue #16 飞踢借力上横梁） */
+  _spawnEggHelpers() {
+    for (const spec of this.layout.eggHelpers) {
+      const monster = this.ai.spawnMonster(spec.type, spec.x, spec.y);
+      this.eggHelperBugs.push({ spec, monster });
+    }
   }
 
   /* ==========================================================
@@ -364,6 +470,9 @@ export default class StageScene extends Phaser.Scene {
     this.ai?.update(time, delta);
     this.player.setDebugMeleeBox(true);
 
+    // 老年记忆碎片的追踪目标（ChalkBullet 读 scene.targets；含 Boss）
+    this.targets = this.ai ? [...this.ai.aliveMonsters(), this.ai.activeBoss()].filter(Boolean) : [];
+
     this._updateCheckpoints();
     this._updateEasterEggs();
     this._updateBullets();
@@ -418,6 +527,15 @@ export default class StageScene extends Phaser.Scene {
     for (const egg of this.easterEggs) {
       if (egg.taken) continue;
       if (Math.abs(this.player.x - egg.x) < 14 && Math.abs(this.player.y - egg.y) < 40) {
+        // 纸箱两段式（GDD §4.4）：封条未碎只提示，不触发
+        if (egg.id === 'puppy-box' && !egg.smashed) {
+          if (!egg.hintedAt || this.time.now - egg.hintedAt > 1600) {
+            egg.hintedAt = this.time.now;
+            this._toast('纸箱在颤动……用 J 打开封条试试');
+          }
+          continue;
+        }
+
         egg.taken = true;
         egg.marker.setTint(0x88ff88);
         this._openEasterEgg(egg.id);
@@ -430,6 +548,10 @@ export default class StageScene extends Phaser.Scene {
     if (id === 'standard-answer') {
       this.player.grantStandardAnswer();
       this._toast('拾取【标准答案】：能量上限 80 · 回能 4/s');
+    } else if (id === 'love-letter') {
+      // 彩蛋1（issue #16）：情书 → 【怦然心动】近战伤害 +25%
+      this.player.grantLoveLetter();
+      this._toast('拾取【手写情书】：近战伤害 +25%（怦然心动）');
     } else if (id === 'puppy-box') {
       // 纸箱 → 忠犬入队（写 registry，二/三关自动继承形态）
       this.ai?.onEasterEgg('puppy-box');
@@ -446,6 +568,81 @@ export default class StageScene extends Phaser.Scene {
       onTick: () => audio.play('typing'),
       onClose: () => audio.play('ui'),
     });
+  }
+
+  /** 近战结算入口（issue #16）：打碎可碎物（纸堆/纸箱封条）；小怪结算由 AIManager 链式处理 */
+  _onPlayerMelee(info) {
+    if (!info?.box) return;
+    for (const b of this.breakables ?? []) {
+      if (b.smashed) continue;
+      const rect = new Phaser.Geom.Rectangle(b.x - 12, b.y - 16, 24, 24);
+      if (!Phaser.Geom.Intersects.RectangleToRectangle(info.box, rect)) continue;
+
+      if (b.kind === 'paper-pile') {
+        this._smashPaperPile(b);
+      } else if (b.kind === 'box') {
+        this._openPuppyBox(b);
+      }
+    }
+  }
+
+  _smashPaperPile(b) {
+    b.smashed = true;
+    for (const part of b.parts) part.setVisible(false);
+    // 纸屑四散
+    for (let i = 0; i < 5; i += 1) {
+      const scrap = this.add
+        .image(b.x + Phaser.Math.Between(-8, 8), b.y - 4, 'school_corridor', 'paper_scrap')
+        .setDepth(13);
+      this.tweens.add({
+        targets: scrap,
+        x: b.x + Phaser.Math.Between(-34, 34),
+        y: b.y + Phaser.Math.Between(-14, 10),
+        angle: Phaser.Math.Between(-120, 120),
+        alpha: 0,
+        duration: 620,
+        ease: 'Cubic.out',
+        onComplete: () => scrap.destroy(),
+      });
+    }
+    // 情书浮现 → 注册为可触碰彩蛋
+    const letter = this.add.image(b.x, b.y - 6, 'ph_letter').setDepth(14);
+    this.tweens.add({
+      targets: letter,
+      y: letter.y - 5,
+      duration: 700,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+    });
+    this.easterEggs.push({
+      id: 'love-letter',
+      x: b.x,
+      y: b.y - 2,
+      type: 'buff',
+      marker: letter,
+      taken: false,
+      smashed: false,
+    });
+    this._toast('纸堆散开——桌洞里掉出一封信');
+  }
+
+  _openPuppyBox(b) {
+    b.smashed = true;
+    const egg = this.easterEggs.find((e) => e.id === 'puppy-box');
+    if (!egg) return;
+    egg.smashed = true;
+    if (this.textures.exists('easter_eggs')) {
+      egg.marker.setTexture('easter_eggs', 'box_open');
+      const bubble = this.add.image(egg.x, egg.y - 40, 'easter_eggs', 'bubble_wuu').setDepth(13);
+      this.tweens.add({
+        targets: bubble,
+        y: bubble.y - 6,
+        alpha: 0,
+        duration: 1500,
+        onComplete: () => bubble.destroy(),
+      });
+    }
   }
 
   _updateBullets() {
@@ -647,5 +844,6 @@ export default class StageScene extends Phaser.Scene {
     this.inputCtl = null;
     this.bullets = [];
     this.targets = [];
+    this.eggHelperBugs = [];
   }
 }

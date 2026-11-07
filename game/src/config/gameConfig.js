@@ -138,6 +138,15 @@ export const STANDARD_ANSWER_BUFF = Object.freeze({
   mpRegen: 4,
 });
 
+/**
+ * 第一关【怦然心动】彩蛋增益（issue #16 彩蛋1 手写情书）：
+ * 桌洞纸堆打碎后拾取情书，近战伤害永久提升 25%。
+ * 数值取"少年直拳 10/10/16 → 13/13/20"，与三连击节奏对齐不破格。
+ */
+export const LOVE_LETTER_BUFF = Object.freeze({
+  meleeMultiplier: 1.25,
+});
+
 /** 按键映射（设计文档 §2.1，PC 键盘标准） */
 export const KEYS = Object.freeze({
   left: ['LEFT', 'A'],

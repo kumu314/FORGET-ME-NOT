@@ -24,6 +24,14 @@ export function ensurePlaceholderTextures(scene) {
   make('ph_duct', 16, 16, 0x66707c);
   make('ph_checkpoint', 6, 22, 0xffd76a);
   make('ph_easter', 10, 10, 0xffb347);
+  // 桌洞纸堆打碎后露出的手写情书（issue #16 彩蛋1）：粉色信封占位，正式贴图同名覆盖即可
+  const letter = scene.make.graphics({ x: 0, y: 0, add: false });
+  letter.fillStyle(0xf5a8b8, 1).fillRect(0, 0, 10, 8);
+  letter.lineStyle(1, 0xc96f84, 1).strokeRect(0.5, 0.5, 9, 7);
+  letter.lineBetween(0, 0, 5, 4);
+  letter.lineBetween(10, 0, 5, 4);
+  letter.generateTexture('ph_letter', 10, 8);
+  letter.destroy();
 }
 
 /** 纹理 key → 显示颜色（台阶细线淡一点） */

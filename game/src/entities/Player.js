@@ -27,6 +27,7 @@ import {
 } from '../scenes/spriteAtlases.js';
 import {
   applyDamage,
+  applyLoveLetter,
   canJump,
   canStartMelee,
   canStartRanged,
@@ -92,6 +93,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.facing = 1;
     this.standardAnswer = false; // 【标准答案】彩蛋 Buff
+    this.loveLetter = false; // 【怦然心动】彩蛋 Buff（近战伤害 +25%，issue #16）
     this.broadcastExercise = false; // 【广播体操】被动：格挡减免 70→85%
 
     const maxMp = computeMpCap(this.phase, { standardAnswer: this.standardAnswer });
@@ -210,6 +212,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.standardAnswer = true;
     this.maxMp = computeMpCap(this.phase, { standardAnswer: true });
     this.mp = this.maxMp;
+    return this;
+  }
+
+  /** 获得【怦然心动】彩蛋增益（近战伤害 +25%） */
+  grantLoveLetter() {
+    this.loveLetter = true;
     return this;
   }
 
@@ -397,7 +405,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if (!this.meleeHitDone && this.meleeElapsedMs >= this.meleeActiveAt) {
       this.meleeHitDone = true;
       const chain = MELEE_CHAIN[this.phaseId];
-      const damage = chain.damage[this.meleeStage - 1] ?? chain.damage[0];
+      const baseDamage = chain.damage[this.meleeStage - 1] ?? chain.damage[0];
+      const damage = applyLoveLetter(baseDamage, this.loveLetter);
       const box = this.getMeleeHitbox();
       this.eventsHooks.onMeleeHit?.({
         damage,
