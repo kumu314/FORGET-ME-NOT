@@ -16,6 +16,7 @@ import { ELDER_CHILD, canHugChild } from '../config/elderEnding.js';
 import { installStagePassives, tickPassiveRecovery } from '../entities/stagePassives.js';
 import { installTelemetry } from '../telemetry/PlaytestTelemetry.js';
 import { installJuice } from '../fx/Juice.js';
+import { installPhysicsDiagnostics } from '../core/PhysicsDiagnostics.js';
 
 /**
  * 关卡场景（成员C：关卡碰撞检测与检查点复活 / 成员D：AI 接线 / 成员E：HUD·弹窗·音频·转场）
@@ -80,6 +81,7 @@ export default class StageScene extends Phaser.Scene {
     this.respawnPending = false;
     this.inputState = createIdleState();
     this.modalOpen = false;
+    this._modalReasons = new Set();
     this.transitioning = false;
     this.eggHelperBugs = [];
   }
@@ -100,6 +102,7 @@ export default class StageScene extends Phaser.Scene {
     this.respawnPending = false;
     this.inputState = createIdleState();
     this.modalOpen = false;
+    this._modalReasons = new Set();
     this.transitioning = false;
     this.endingPlayed = false;
     this.child = null;
@@ -130,6 +133,7 @@ export default class StageScene extends Phaser.Scene {
     this._initUiModules();
     installEndingScreen(this);
     installTelemetry(this); // 试玩遥测（issue #26）：用时/死亡/承伤/按键，__fmnTelemetry.download() 导出
+    installPhysicsDiagnostics(this);
     installJuice(this); // 打击感机制层（issue #26）：命中顿帧 + 三档屏震
 
     this.cameras.main.startFollow(this.player, true, 0.2, 0.2);
@@ -176,20 +180,26 @@ export default class StageScene extends Phaser.Scene {
     audio.startBgm(BGM_KEY[this.phaseId]);
 
     // 3) 彩蛋弹窗开启时冻结世界（GDD：慢动作居中特写）
-    this._onEggOpen = () => {
-      this.modalOpen = true;
-      this.player?.setVelocity(0, 0);
-      this.physics?.world?.pause?.();
-    };
-    this._onEggClose = () => {
-      this.modalOpen = false;
-      this.physics?.world?.resume?.();
-    };
+    this._onEggOpen = (event) => this._setModalPaused(event.detail?.key ?? 'egg', true);
+    this._onEggClose = (event) => this._setModalPaused(event.detail?.key ?? 'egg', false);
     window.addEventListener('egg-modal:open', this._onEggOpen);
     window.addEventListener('egg-modal:close', this._onEggClose);
 
     // 4) 战斗事件 → HUD 飘字 / 音效
     this._bindCombatFeedback();
+  }
+
+  /** Only the last matching modal release may resume the world. */
+  _setModalPaused(key, open) {
+    if (open) this._modalReasons.add(key);
+    else this._modalReasons.delete(key);
+    this.modalOpen = this._modalReasons.size > 0 || this.endingPlayed;
+    if (this.modalOpen) {
+      this.player?.setVelocity(0, 0);
+      this.physics?.world?.pause?.();
+    } else if (!this.transitioning) {
+      this.physics?.world?.resume?.();
+    }
   }
 
   _bindCombatFeedback() {
@@ -570,6 +580,11 @@ export default class StageScene extends Phaser.Scene {
     }
     this.ai?.update(time, delta);
     this.xp?.update(delta);
+    // An upgrade opened during this update must not also trigger an egg underneath it.
+    if (this.modalOpen) {
+      this._syncHud(delta);
+      return;
+    }
     this.player.setDebugMeleeBox(true);
 
     // 老年记忆碎片的追踪目标（ChalkBullet 读 scene.targets；含 Boss）
