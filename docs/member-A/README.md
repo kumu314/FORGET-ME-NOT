@@ -1,6 +1,6 @@
 # A · 角色资源首版（待美术评审 / 游戏联调）
 
-2026-11-07，基于 main `c00d12a84d48e574ace440c2adfd7486cd4c693c`。
+2026-11-07。资源首次制作基于 main `c00d12a`；提交前已同步 develop `574d1cf`，采用最新 v2 协作规范。
 
 首版提供三年龄主角、三年龄阿黄、班主任、老板和长大的孩子。共 **9 张透明 PNG、9 份图集 JSON、200 个实际帧、53 个动画定义**。`preview.html` 可直接用 Chrome / Edge 双击打开；不依赖网络。
 
@@ -76,6 +76,17 @@ hero.setFlipX(true); // 原图统一面向右，向左用 flipX
 
 ## 协作状态
 
-本地分支：`feat/member-A-characters`。尚未推送或发 PR。
+功能分支：`assets/member-A-char-core-atlases`；PR 目标为 `develop`，标题前缀 `[成员A]`。至少 1 名成员 approve 后才可 Squash 合并；A/B 互审资源规格。
 
-仓库 `CONTRIBUTING.md` 要求 PR 到 main，较新的分工文档要求到 develop；开工拉取时远端尚无 develop。提交前请团队统一分支策略。不要以本说明代替团队决定，不直接推 main。
+截至同步基线，develop 只有设计与协作文档，无 package.json，不能在此基线上执行 npm run dev。本批采用独立 Phaser 3.90 加载场景 + 离线预览完成验证，不声称已通过主游戏运行验收。
+
+## 与 C 的待审 PR #5 对接
+
+已只读核查 C 分支提交 `ec9a728`：
+
+- C 把游戏工程放在 `game/`，资源预期 `game/public/assets/sprites/`；当前 develop 文档仍约定根目录 `public/assets/sprites/`。本批先遵循已合入的目录规范。若 C 的目录调整最终获批，集成时将本批 sprites 目录移动到 game/public/assets/sprites；浏览器 URL 仍是 assets/sprites，不要复制两份资源长期并存。
+- C 的 Player 已有 `phaseId`、`facing`、`isGrounded`、`isBlocking`、`coughMs`、`hurtLockMs`、`meleeStage`、`meleeAirKick`，可映射到本批动画。资源 helper 不会自动修改 Player 的动作选择逻辑。
+- C 当前占位图使用 `setOrigin(0.5, 1)`、14×22 body、offset(5, 2)，并在阶段切换 / 复活时 setTint。接入真实图集时需检查 **1px 脚底原点差**、清除阶段 tint，并保持物理盒世界坐标稳定，不能仅替换纹理 key 后声称接入完成。
+- C 的青年近战前两段总时长为 120ms，本批预览默认 360ms；中老年的时序也不同。正式联调需按 `MELEE_CHAIN.activeAt/recover` 对齐姿态，不要直接采用预览帧率充当攻击判定时间。
+
+本批没有改 C 的 Player、配置、共享场景或待审分支；主游戏适配属于后续协调后的接入工作。
