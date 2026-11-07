@@ -152,7 +152,12 @@ export default class StageScene extends Phaser.Scene {
     this._unlockAudio = () => audio.unlock();
     window.addEventListener('pointerdown', this._unlockAudio, { once: true });
     window.addEventListener('keydown', this._unlockAudio, { once: true });
-    ensureSfxLoaded();
+    ensureSfxLoaded().then(() => {
+      // 二关雨夜的环境雨声：AudioManager.playLoop 就是为「第二关雨声」留的口子。
+      // 素材没加载成功时 playLoop 返回空函数，等于静音，不抛错。
+      if (this.phaseId !== 'middle' || !this.scene.isActive()) return;
+      this._stopRain = audio.playLoop('rain', { volume: 0.22 });
+    });
     audio.stopBgm();
     audio.startBgm(BGM_KEY[this.phaseId]);
 
@@ -488,17 +493,27 @@ export default class StageScene extends Phaser.Scene {
     this._updateCheckpoints();
     this._updateEasterEggs();
     this._updateBullets();
-    this._updateParallax();
+    this._updateParallax(delta);
     this._checkEnding();
     refreshHud(this, this.hud, this.player);
     this._syncHud(delta);
   }
 
   /** 视差背景：按相机横向滚动量推进每一层的 tilePosition */
-  _updateParallax() {
+  _updateParallax(delta = 16) {
     const scrollX = this.cameras.main.scrollX;
     for (const { sprite, factor } of this.parallaxLayers || []) {
       sprite.tilePositionX = scrollX * factor;
+    }
+
+    // fx 层（二关雨丝）：横向跟相机，纵向按真实时间下落。
+    // 用 delta/1000 而不是每帧固定量，掉帧时雨速不会跟着变慢。
+    for (const fx of this.parallaxFx || []) {
+      fx.sprite.tilePositionX = scrollX * fx.factor;
+      fx.offsetY -= (fx.speedY * delta) / 1000;
+      // 落到一个平铺周期外就回卷：画面完全一致，但避免长时间运行后数值越滚越大
+      if (fx.tileH && fx.offsetY <= -fx.tileH) fx.offsetY += fx.tileH;
+      fx.sprite.tilePositionY = fx.offsetY;
     }
   }
 
@@ -851,6 +866,8 @@ export default class StageScene extends Phaser.Scene {
     this._hudMount?.destroy();
     this._hudMount = null;
     this.battleHud = null;
+    this._stopRain?.();
+    this._stopRain = null;
     audio.stopBgm();
 
     this.inputCtl?.destroy();
