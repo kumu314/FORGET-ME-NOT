@@ -14,6 +14,8 @@ import { TypewriterTransition, TRANSITION_PRESETS } from '../ui/TypewriterTransi
 import { installEndingScreen } from '../ui/EndingScreen.js';
 import { ELDER_CHILD, canHugChild } from '../config/elderEnding.js';
 import { installStagePassives, tickPassiveRecovery } from '../entities/stagePassives.js';
+import { installTelemetry } from '../telemetry/PlaytestTelemetry.js';
+import { installJuice } from '../fx/Juice.js';
 
 /**
  * 关卡场景（成员C：关卡碰撞检测与检查点复活 / 成员D：AI 接线 / 成员E：HUD·弹窗·音频·转场）
@@ -127,6 +129,8 @@ export default class StageScene extends Phaser.Scene {
     this.hud = createHud(this);
     this._initUiModules();
     installEndingScreen(this);
+    installTelemetry(this); // 试玩遥测（issue #26）：用时/死亡/承伤/按键，__fmnTelemetry.download() 导出
+    installJuice(this); // 打击感机制层（issue #26）：命中顿帧 + 三档屏震
 
     this.cameras.main.startFollow(this.player, true, 0.2, 0.2);
     this.cameras.main.setDeadzone(60, 40);
@@ -451,6 +455,7 @@ export default class StageScene extends Phaser.Scene {
   async _advanceStage() {
     if (this.transitioning) return;
     this.transitioning = true;
+    this.events.emit('stage:complete', { phaseId: this.phaseId }); // 遥测：本关结算（issue #26）
     audio.stopBgm();
 
     const next = NEXT_PHASE[this.phaseId];
@@ -592,6 +597,7 @@ export default class StageScene extends Phaser.Scene {
       const cp = this.checkpointList[i];
       if (Math.abs(this.player.x - cp.x) < 18 && this.player.y >= cp.y - 40) {
         this.activeCheckpointIndex = i;
+        this.events.emit('checkpoint', cp); // 遥测：激活顺序（issue #26）
         this.player.setSpawnPoint(cp.x, cp.y);
         this.checkpointMarkers.forEach((m, idx) => m.setAlpha(idx <= i ? 1 : 0.55));
         this.cameras.main.flash(120, 255, 215, 106);
@@ -772,6 +778,7 @@ export default class StageScene extends Phaser.Scene {
   }
 
   _onPlayerDamaged(info) {
+    this.events.emit('player:damaged', info); // 遥测 + 打击感屏震（issue #26）
     this.battleHud?.hurtFlash();
     audio.play(info?.result?.blocked ? 'block' : 'hurt');
     this._showDamageText(info);
@@ -780,6 +787,7 @@ export default class StageScene extends Phaser.Scene {
   _onPlayerDeath() {
     if (this.respawnPending) return;
     this.respawnPending = true;
+    this.events.emit('player:died'); // 遥测：死亡计数（issue #26）
     audio.play('death');
     this.cameras.main.shake(180, 0.008);
     this._showDeathOverlay();
