@@ -21,6 +21,13 @@ export default class BootScene extends Phaser.Scene {
       }
     }
 
+    // fx 叠加层（二关雨丝）：文件名不跟 `prefix_layer` 规约走，按 file 字段单独加载
+    for (const { fx } of Object.values(PARALLAX_SETS)) {
+      for (const f of fx ?? []) {
+        this.load.image(`par_${f.file}`, `assets/parallax/${f.file}.png`);
+      }
+    }
+
     this.load.on('loaderror', (file) => {
       console.warn(`[boot] 资源加载失败 ${file.key}: ${file.src ?? 'unknown source'}`);
     });

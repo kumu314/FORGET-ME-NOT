@@ -50,6 +50,10 @@ export const PARALLAX_SETS = {
   middle: {
     prefix: 'stage2_night',
     layers: [['sky', 0.1], ['far', 0.3], ['mid', 0.6], ['near', 0.85]],
+    // 雨丝层：parallax.json 里单独列为 layer=fx / scrollFactor=1.0，
+    // 文件名不跟 `prefix_layer` 规约走，所以单独列一项，不混进 layers。
+    // speedY 是平铺像素/秒，tilePositionY 递减即雨往下落。
+    fx: [{ file: 'stage2_rain_overlay', factor: 1, speedY: 200, alpha: 0.42, depth: 15 }],
   },
   elder: {
     prefix: 'stage3_sunset',
@@ -83,6 +87,34 @@ export function createBackground(scene, tint, label, phaseId) {
 
     scene.parallaxLayers.push({ sprite: ts, factor });
   });
+
+  // fx 层（雨/雪等叠加氛围）：横向仍跟相机，纵向由 StageScene 每帧推 tilePositionY。
+  // 深度取在地形(10)/道具(11~12)之上、玩家(20)之下——雨幕压在场景上但不盖住主角。
+  scene.parallaxFx = [];
+  for (const f of set.fx ?? []) {
+    const key = `par_${f.file}`;
+    if (!scene.textures.exists(key)) continue;
+
+    const src = scene.textures.get(key).getSourceImage();
+    const scale = GAME_HEIGHT / (src?.height || GAME_HEIGHT);
+
+    const ts = scene.add
+      .tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, key)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(f.depth ?? 15)
+      .setAlpha(f.alpha ?? 0.42);
+    ts.setTileScale(scale, scale);
+
+    scene.parallaxFx.push({
+      sprite: ts,
+      factor: f.factor ?? 1,
+      speedY: f.speedY ?? 200,
+      offsetY: 0,
+      // 一个平铺周期的像素高度，用于把 offsetY 取模回落，避免长时间运行后数值无限增长
+      tileH: (src?.height || GAME_HEIGHT) * scale,
+    });
+  }
 
   return bg;
 }
