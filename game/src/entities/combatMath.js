@@ -5,7 +5,14 @@
  * 依据《游戏功能设计文档》§3 核心战斗与数值系统。
  */
 
-import { COMBAT, LOVE_LETTER_BUFF, PHYSICS, STANDARD_ANSWER_BUFF } from '../config/gameConfig.js';
+import {
+  COMBAT,
+  LEVEL_UPGRADES,
+  LOVE_LETTER_BUFF,
+  PHYSICS,
+  STANDARD_ANSWER_BUFF,
+  XP_SYSTEM,
+} from '../config/gameConfig.js';
 
 /** 能量上限：青年 50，【标准答案】彩蛋永久提升至 80 */
 export function computeMpCap(phase, { standardAnswer = false } = {}) {
@@ -17,6 +24,35 @@ export function computeMpCap(phase, { standardAnswer = false } = {}) {
 export function applyLoveLetter(damage, loveLetter = false) {
   if (!loveLetter) return damage;
   return Math.round(damage * LOVE_LETTER_BUFF.meleeMultiplier);
+}
+
+/**
+ * 近战最终伤害（issue #17）：基础 ×【怦然心动】× 攻击力强化（升级可叠）。
+ * applyLoveLetter 保留为单因子速查（既有单测依赖）。
+ */
+export function computeMeleeDamage(baseDamage, { loveLetter = false, attackLevels = 0 } = {}) {
+  let damage = baseDamage;
+  if (loveLetter) damage *= LOVE_LETTER_BUFF.meleeMultiplier;
+  damage *= LEVEL_UPGRADES.attack.meleeMultiplier ** attackLevels;
+  return Math.round(damage);
+}
+
+/** 暴击判定：critChance ∈ [0, cap]，注入 rand 便于单测 */
+export function rollCrit(critChance, rand = Math.random()) {
+  if (critChance <= 0) return false;
+  return rand < Math.min(critChance, LEVEL_UPGRADES.crit.critCap);
+}
+
+/** 跳跃滞空强化：每级重力 ×0.85，封底 0.7（老年禁跳不受影响，重力只影响腾空段） */
+export function computeGravityScale(hangLevels = 0) {
+  if (hangLevels <= 0) return 1;
+  const scale = LEVEL_UPGRADES.hang.gravityScale ** hangLevels;
+  return Math.max(LEVEL_UPGRADES.hang.floor, scale);
+}
+
+/** 升到 level+1 级所需经验：base × growth^(level-1)，向上取整 */
+export function expToNext(level = 1) {
+  return Math.ceil(XP_SYSTEM.baseLevelExp * XP_SYSTEM.levelGrowth ** (level - 1));
 }
 
 /** 每秒回能：青年 2/s；【标准答案】提升至 4/s */

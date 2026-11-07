@@ -6,6 +6,7 @@ import { createBackground, createHud, refreshHud, SOLID_TEXTURE } from './sceneH
 import Player from '../entities/Player.js';
 import ChalkBullet from '../entities/ChalkBullet.js';
 import AIManager from '../ai/AIManager.js';
+import XpSystem from '../entities/XpSystem.js';
 import { audio } from '../audio/AudioManager.js';
 import { mountBattleHud } from '../ui/HudOverlay.js';
 import { EasterEggModal, EGG_PRESETS } from '../ui/EasterEggModal.js';
@@ -113,6 +114,7 @@ export default class StageScene extends Phaser.Scene {
     this._buildEasterEggs();
     this._spawnPlayer();
     this._initAI();
+    this._initXP();
 
     this.hud = createHud(this);
     this._initUiModules();
@@ -389,6 +391,15 @@ export default class StageScene extends Phaser.Scene {
     return ground.length ? Math.min(...ground.map((s) => s.y)) : 240;
   }
 
+  /** 经验系统接线（issue #17）：光球磁吸 + 升级三选一，跨关 registry 持久化 */
+  _initXP() {
+    this.xp = new XpSystem(this, this.player);
+    this.events.once('shutdown', () => {
+      this.xp?.destroy();
+      this.xp = null;
+    });
+  }
+
   /** 彩蛋解谜浮空借力怪（stageLayout.eggHelpers，y 为显式悬停高度；issue #16 飞踢借力上横梁） */
   _spawnEggHelpers() {
     for (const spec of this.layout.eggHelpers) {
@@ -468,6 +479,7 @@ export default class StageScene extends Phaser.Scene {
 
     this.player.update(delta, input);
     this.ai?.update(time, delta);
+    this.xp?.update(delta);
     this.player.setDebugMeleeBox(true);
 
     // 老年记忆碎片的追踪目标（ChalkBullet 读 scene.targets；含 Boss）
@@ -501,6 +513,7 @@ export default class StageScene extends Phaser.Scene {
       mp: this.player.mp,
       maxMp: this.player.maxMp,
     });
+    if (this.xp) this.battleHud.setXp(this.xp.getHudState());
     this.battleHud.render(Math.min(delta, 50) / 1000);
   }
 
