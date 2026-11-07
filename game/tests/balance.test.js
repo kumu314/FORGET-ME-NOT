@@ -5,7 +5,7 @@ vi.mock('phaser', () => ({
 }));
 
 import Player from '../src/entities/Player.js';
-import { LIFECYCLE, PHYSICS, RANGED_COOLDOWN, RANGED_COST } from '../src/config/gameConfig.js';
+import { COMBAT, LIFECYCLE, PHYSICS, RANGED_COOLDOWN, RANGED_COST } from '../src/config/gameConfig.js';
 import { blockCadenceEnvelope, rangedResourceEnvelope, stagePacingEnvelope } from '../src/entities/balanceMath.js';
 
 function resourceFixture(phaseId) {
@@ -32,15 +32,15 @@ function resourceFixture(phaseId) {
   };
 }
 
-function fireFor(phaseId, durationMs = 60000, PlayerClass = Player) {
+function fireFor(phaseId, durationMs = 60000) {
   const player = resourceFixture(phaseId);
   const firedAt = [];
   let now = 0;
   player.eventsHooks.onRangedFire = () => firedAt.push(now);
   for (now = 0; now < durationMs; now += 20) {
-    PlayerClass.prototype._tickTimers.call(player, 20);
-    PlayerClass.prototype._tickMp.call(player, 20);
-    PlayerClass.prototype._handleRanged.call(player, { rangedHeld: true });
+    Player.prototype._tickTimers.call(player, 20);
+    Player.prototype._tickMp.call(player, 20);
+    Player.prototype._handleRanged.call(player, { rangedHeld: true });
   }
   return { player, firedAt };
 }
@@ -91,23 +91,16 @@ describe('real Player resource methods with mocked Phaser, fixed 20 ms steps', (
     },
   );
 
-  it('cost-three candidate sustains the real cast method at 260 ms with 12 MP/s', async () => {
-    vi.resetModules();
-    vi.doMock('../src/config/gameConfig.js', async (importOriginal) => {
-      const actual = await importOriginal();
-      return { ...actual, RANGED_COST: { ...actual.RANGED_COST, elder: 3 } };
-    });
-    try {
-      const { default: CandidatePlayer } = await import('../src/entities/Player.js');
-      const { player, firedAt } = fireFor('elder', 60000, CandidatePlayer);
-      expect(firedAt).toHaveLength(231);
-      expect(player.mp).toBeGreaterThanOrEqual(197);
-      for (let index = 1; index < firedAt.length; index += 1) {
-        expect(firedAt[index] - firedAt[index - 1]).toBe(260);
-      }
-    } finally {
-      vi.doUnmock('../src/config/gameConfig.js');
-      vi.resetModules();
+  it('configured elder cost sustains real held casting at 260 ms with 12 MP/s', () => {
+    expect(LIFECYCLE.elder.mp).toBe(200);
+    expect(LIFECYCLE.elder.mpRegen).toBe(12);
+    expect(RANGED_COST.elder).toBe(3);
+    expect(RANGED_COOLDOWN.elder).toBe(260);
+    const { player, firedAt } = fireFor('elder');
+    expect(firedAt).toHaveLength(231);
+    expect(player.mp).toBeGreaterThanOrEqual(197);
+    for (let index = 1; index < firedAt.length; index += 1) {
+      expect(firedAt[index] - firedAt[index - 1]).toBe(260);
     }
   });
 
@@ -148,12 +141,17 @@ describe('dense-hit diagnostic: real Player.takeDamage, not an AI win-rate model
     return { hits, damage: 100000 - player.hp };
   }
 
-  it('compares actual damage cadence against an explicit continuous-hit envelope', () => {
+  it('ordinary block reduces dense-hit total damage with equal protection windows', () => {
     const block = incomingHits(true);
     const rush = incomingHits(false);
     const player = { ...resourceFixture('youth'), hp: 1000, blockHeldForMs: 1000, isBlocking: true };
     Player.prototype.takeDamage.call(player, 20);
     const envelope = blockCadenceEnvelope(20, player.invulnMs);
+    expect(COMBAT.blockInvulnMs).toBe(PHYSICS.invulnMs);
+    expect(player.invulnMs).toBe(COMBAT.blockInvulnMs);
+    expect(block).toEqual({ hits: 67, damage: 402 });
+    expect(rush).toEqual({ hits: 67, damage: 1340 });
+    expect(block.damage).toBeLessThan(rush.damage);
     expect(block.hits).toBe(Math.ceil(60000 / (Math.ceil(player.invulnMs / 20) * 20)));
     expect(block.damage).toBe(block.hits * envelope.ordinaryBlockedDamage);
     expect(rush.hits).toBe(Math.ceil(60000 / (Math.ceil(PHYSICS.invulnMs / 20) * 20)));

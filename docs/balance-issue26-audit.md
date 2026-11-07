@@ -1,6 +1,14 @@
 # Issue #26: balance audit, not acceptance sign-off
 
-Baseline: develop f0aa037, 2026-11-07. This change adds an offline configuration report and nine mechanics probes. It does not change live tuning. Issue #26 stays open.
+Audit baseline: develop f0aa037, 2026-11-07. The initial commit adds an offline configuration report and nine mechanics probes. The authorized follow-up applies the two tuning fixes below. Issue #26 stays open. Historical source line references below refer to f0aa037.
+
+## Applied follow-up: sustained elder casting and equal block protection
+
+The follow-up changes gameConfig.RANGED_COST.elder from 10 to 3, retaining elder 200 MP, 12 MP/s and 260 ms cooldown. It adds COMBAT.blockInvulnMs=900 and replaces Player.takeDamage's blocked 120 ms literal with this constant, matching the existing 900 ms unblocked protection. Blocking still prevents melee and ranged attacks.
+
+With production config and real Player methods, the elder held-cast regression now emits 231 shots in 60 simulated seconds (3,000 steps of 20 ms), exactly 260 ms apart, with MP at least 197. There is no candidate configuration injection in this regression. In the same dense-hit exposure described below, ordinary block now accepts 67 hits for 402 damage, while no block accepts 67 hits for 1,340 damage: total blocked damage is 30% of unblocked damage for those equal 3,000-request sequences. These are mechanics regressions, not player win rates. The script now reports the previous cost-ten envelope alongside the active config.
+
+Tradeoffs remain: sustained elder output rises and energy scarcity falls; equal protection windows admit fewer block events than the old 120 ms rule, reducing MP-refund opportunities. Human duration, style win rates, collision behavior and subjective feel remain unmeasured. To revert just the tuning, restore elder cost 10 and the previous blocked 120 ms assignment; the parent can revert the independent follow-up commit if required.
 
 ## Reproduce
 
@@ -24,11 +32,11 @@ No stage-clear runs were measured: 0 runs across all three stages. No block/rush
 
 ## Elder spell supply: retain 12 MP/s, evaluate cost three
 
-Production currently has 200 MP, regen 12/s, cost 10 and cooldown 260 ms (gameConfig.js:59, :122 and :129). Player._handleRanged already fires while L is held; it gates on cooldown, block, hurt and MP, not on a fresh keypress. No extra repeat-input implementation is required.
+The audited f0aa037 baseline has 200 MP, regen 12/s, cost 10 and cooldown 260 ms (gameConfig.js:59, :122 and :129). Player._handleRanged already fires while L is held; it gates on cooldown, block, hurt and MP, not on a fresh keypress. No extra repeat-input implementation is required.
 
 At cost 10 the cooldown ceiling is 3.846 shots/s, but sustainable MP supply permits only 1.2 shots/s: 31.2% of that ceiling. Continuous-drain approximation exhausts a full bar in 7.56 s; actual first starvation is frame/shot dependent, so this is not an exact runtime deadline. The production-method probe emits 91 shots over 60 simulated seconds from full MP with no incoming damage, block, dog refunds or perfect-block refunds. Youth/middle yield 11/19 shots under the same resource-only conditions. These counts do not measure hits or kills.
 
-If sustained hold-L casting is intended, cost 3 fits 12 MP/s and 260 ms: maximum sustainable cost is 3.12 MP/shot. Injecting only cost=3 into the real Player cast-method test produces 231 shots over 60 simulated seconds, each 260 ms apart, with MP remaining at least 197. This is an isolated candidate, not a live config change. At typical 60 Hz, 260 ms rounds to at least 16 frames (266.7 ms); browser frame timing remains unmeasured here.
+For sustained hold-L casting, cost 3 fits 12 MP/s and 260 ms: maximum sustainable cost is 3.12 MP/shot. The initial isolated candidate produced 231 shots over 60 simulated seconds, each 260 ms apart, with MP remaining at least 197; the follow-up reproduces this using the active production config. At typical 60 Hz, 260 ms rounds to at least 16 frames (266.7 ms); browser frame timing remains unmeasured here.
 
 GDD specifies youth cost 15 (line 90), middle cost 20 (line 174), elder 12 MP/s and spell-machine-gun intent (line 224), but gives no elder numeric cost. The existing source comment attributing elder cost 10 to GDD is therefore unsupported by the checked document. A cost-three tuning change would preserve the lifecycle regen contract.
 
@@ -36,10 +44,10 @@ Tradeoff: cost three raises eventual single-target ranged output from supply-lim
 
 ## Dense-hit reversal: ordinary block can take more damage
 
-Player.takeDamage grants blocked hits 120 ms of invulnerability (Player.js:588), but unblocked hits PHYSICS.invulnMs=900 ms (Player.js:591). Blocking reduces individual hits by 70%; it also prevents casting and ground melee while held. No equivalent invulnerability tuning constant exists yet for the blocked branch.
+At f0aa037 Player.takeDamage grants blocked hits 120 ms of invulnerability (Player.js:588), but unblocked hits PHYSICS.invulnMs=900 ms (Player.js:591). Blocking reduces individual hits by 70%; it also prevents casting and ground melee while held. The follow-up replaces the blocked literal with COMBAT.blockInvulnMs=900.
 
 One diagnostic requests a 20-damage hit every 20 ms for 60 seconds, starting with 100,000 fixture HP to avoid death stopping the sequence. Ordinary held block accepts 500 hits for 3,000 damage; no block accepts 67 hits for 1,340 damage. This is two deterministic scripted exposure cases, not enemy combat and not two gameplay victories. Continuous-hit arithmetic is 50 versus 22.22 damage/s, a 2.25 ratio. Even 85% mitigation can be counteracted by this immunity difference. Perfect-block MP gain is bounded by MP cap; these tests do not model timing skill or exploit profitability.
 
 If block should reliably reduce damage under overlapping attacks, expose blocked invulnerability in COMBAT and consume that constant in Player.takeDamage. Matching the existing 900 ms unblocked duration is a simple candidate; under identical exposure it preserves the advertised per-hit mitigation over time. A minimum of 270 ms gives equal continuous DPS for raw 20 ordinary-blocked damage 6, but equality is not a benefit and rounding changes this threshold for other hit values. Tradeoff of 900 ms: fewer accepted block events means fewer perfect-block/dog refund opportunities and less multi-hit pressure. Source-specific cadence and actual boss patterns still need runtime validation. Keeping 120 ms retains this dense-hit reversal.
 
-This worker intentionally does not edit Player.js, gameConfig.js, StageScene.js or aiConfig.js. The root integrator owns any live tuning and config wiring. The benefit ceiling here is reproducible resource/cadence diagnosis; 8–15-minute pacing, human block/rush win rates, AI collisions, subjective casting feel and optional feedback effects remain outside these probes. All added files are local and can be omitted without changing gameplay; no publication, push or issue closure occurs.
+The initial diagnostic commit changes no runtime wiring. The authorized follow-up changes only gameConfig.js and the blocked-invulnerability assignment in Player.js, with regression assertions and this disclosure updated. StageScene.js and aiConfig.js are untouched. The benefit ceiling is fixing the demonstrated resource/cadence behavior; 8–15-minute pacing, human block/rush win rates, AI collisions, subjective casting feel and optional feedback effects remain outside these probes. No publication, push or issue closure occurs.

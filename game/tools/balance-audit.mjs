@@ -22,7 +22,7 @@ export function auditBalance() {
         ranged: rangedResourceEnvelope(phaseId),
       }];
     })),
-    elderCost3Candidate: rangedResourceEnvelope('elder', { cost: 3 }),
+    elderPreviousCost10Baseline: rangedResourceEnvelope('elder', { cost: 10 }),
     unmeasured: ['Stage clear duration', 'Block versus rush win rates', 'AI/projectile collision outcomes', 'Subjective spell feel'],
   };
 }

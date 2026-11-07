@@ -76,6 +76,7 @@ export const LIFE_PHASES = Object.freeze(['youth', 'middle', 'elder']);
 export const COMBAT = Object.freeze({
   /** 普通格挡免伤 70%；【广播体操】被动可提升至 85% */
   blockReductionBase: 0.7,
+  blockInvulnMs: 900,
   /** 完美格挡窗口：受到伤害前 0.2 秒内按住 S */
   perfectBlockWindowMs: 200,
   /** 完美格挡免伤 90%，并瞬回 10 点能量 */
@@ -122,7 +123,7 @@ export const MELEE_CHAIN = Object.freeze({
 export const RANGED_COST = Object.freeze({
   youth: 15,
   middle: 20,
-  elder: 10,
+  elder: 3,
 });
 
 /** 远程冷却（毫秒）：青年/中年 340，老年 260 */
