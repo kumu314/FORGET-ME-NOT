@@ -324,7 +324,6 @@ export default class StageScene extends Phaser.Scene {
       owner: shot.owner,
     });
     this.bullets.push(bullet);
-    this.tweens.add({ targets: bullet, angle: 360, duration: 500, repeat: -1 });
   }
 
   _onPlayerDeath() {

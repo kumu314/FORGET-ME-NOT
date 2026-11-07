@@ -8,6 +8,12 @@
  */
 
 import Phaser from 'phaser';
+import {
+  getAnimationKey,
+  hasReadyAnimation,
+  PROJECTILE_ATLAS_ID,
+  PROJECTILE_FRAME_SIZE,
+} from '../scenes/spriteAtlases.js';
 
 export const BULLET_PROFILES = Object.freeze({
   youth: Object.freeze({
@@ -21,6 +27,8 @@ export const BULLET_PROFILES = Object.freeze({
     width: 6,
     height: 3,
     lifespanMs: 1200,
+    atlasAnimation: 'chalk',
+    homing: false,
   }),
   middle: Object.freeze({
     id: 'middle',
@@ -33,6 +41,8 @@ export const BULLET_PROFILES = Object.freeze({
     width: 7,
     height: 4,
     lifespanMs: 1400,
+    atlasAnimation: 'paper_plane',
+    homing: false,
   }),
   elder: Object.freeze({
     id: 'elder',
@@ -45,6 +55,8 @@ export const BULLET_PROFILES = Object.freeze({
     width: 8,
     height: 8,
     lifespanMs: 1600,
+    atlasAnimation: 'memory',
+    homing: true,
   }),
 });
 
@@ -56,9 +68,10 @@ export default class ChalkBullet extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, opts) {
     const phaseId = opts.phaseId ?? 'youth';
     const profile = BULLET_PROFILES[phaseId] ?? BULLET_PROFILES.youth;
-    const textureKey = ChalkBullet.ensureTexture(scene, profile);
+    const hasAtlas = scene.textures.exists(PROJECTILE_ATLAS_ID);
+    const textureKey = hasAtlas ? PROJECTILE_ATLAS_ID : ChalkBullet.ensureTexture(scene, profile);
 
-    super(scene, opts.x, opts.y, textureKey);
+    super(scene, opts.x, opts.y, textureKey, hasAtlas ? `${profile.atlasAnimation}_0` : undefined);
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
@@ -69,11 +82,31 @@ export default class ChalkBullet extends Phaser.Physics.Arcade.Sprite {
     this.ageMs = 0;
     this.consumed = false;
 
+    this.setOrigin(0.5, 0.5);
     this.body.setAllowGravity(false);
-    this.setTint(profile.tint);
+    this.body.setSize(profile.width, profile.height);
+    if (hasAtlas) {
+      this.body.setOffset(
+        (PROJECTILE_FRAME_SIZE - profile.width) / 2,
+        (PROJECTILE_FRAME_SIZE - profile.height) / 2,
+      );
+    }
     this.setDepth(50);
-    this.setVelocity(this.facing * profile.speed, 0);
+    if (hasAtlas) {
+      this.clearTint();
+      if (hasReadyAnimation(scene, PROJECTILE_ATLAS_ID, profile.atlasAnimation)) {
+        this.play(getAnimationKey(PROJECTILE_ATLAS_ID, profile.atlasAnimation));
+      } else {
+        console.warn(
+          `[ChalkBullet] ${PROJECTILE_ATLAS_ID}:${profile.atlasAnimation} missing; using first frame`,
+        );
+      }
+    } else {
+      console.warn(`[ChalkBullet] ${PROJECTILE_ATLAS_ID} atlas missing; using generated placeholder`);
+      this.setTint(profile.tint);
+    }
     this.setFlipX(this.facing < 0);
+    this.setVelocity(this.facing * profile.speed, 0);
   }
 
   static ensureTexture(scene, profile) {
@@ -102,7 +135,28 @@ export default class ChalkBullet extends Phaser.Physics.Arcade.Sprite {
   preUpdate(time, delta) {
     super.preUpdate(time, delta);
     this.ageMs += delta;
+    if (this.profile.homing) this._trackNearestTarget();
     if (this.ageMs > this.profile.lifespanMs) this.destroy();
+  }
+
+  /** 老年记忆碎片：持续选择最近的活动目标，全屏追踪。 */
+  _trackNearestTarget() {
+    const targets = Array.isArray(this.scene?.targets) ? this.scene.targets : [];
+    let nearest = null;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    for (const target of targets) {
+      if (!target?.active || !(target.hp > 0)) continue;
+      const distance = Phaser.Math.Distance.Squared(this.x, this.y, target.x, target.y);
+      if (distance < nearestDistance) {
+        nearest = target;
+        nearestDistance = distance;
+      }
+    }
+    if (!nearest) return;
+
+    const angle = Phaser.Math.Angle.Between(this.x, this.y, nearest.x, nearest.y);
+    this.setVelocity(Math.cos(angle) * this.profile.speed, Math.sin(angle) * this.profile.speed);
+    this.setFlipX(Math.cos(angle) < 0);
   }
 
   /** 命中目标后是否有 AOE */
