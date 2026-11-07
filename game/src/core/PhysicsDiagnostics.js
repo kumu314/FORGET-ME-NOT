@@ -39,7 +39,10 @@ export function installPhysicsDiagnostics(scene) {
       paused: world.isPaused, timeScale: world.timeScale,
       modal: scene.modalOpen, transitioning: scene.transitioning,
       blocked: { ...b.blocked }, touching: { ...b.touching },
-      input: { ...scene.inputState?._held }, dog: scene.ai?.dog?.form ?? null,
+      input: { ...scene.inputState, _held: { ...scene.inputState?._held } },
+      dog: scene.ai?.dog?.form ?? null, passives: [...(p.stagePassives ?? [])],
+      lastPlayerDamageAt: scene.ai?.lastPlayerDamageAt, nextDogHealAt: scene.ai?.dog?.nextHealAt,
+      passiveRestMs: p.passiveRestMs,
     };
     samples.push(sample);
     if (samples.length > 120) samples.shift();
