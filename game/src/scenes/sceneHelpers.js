@@ -37,9 +37,52 @@ export const SOLID_TEXTURE = {
   duct: 'ph_duct',
 };
 
-export function createBackground(scene, tint, label) {
+/**
+ * 每关的视差背景层（成员B 交付的 320×180 PNG，assets/parallax/）
+ * key 与 BootScene 的加载键 `par_<prefix>_<layer>` 对应，scrollFactor 越大越"近"。
+ * 图片原生 320×180，需要放大到 480×270 逻辑分辨率再平铺。
+ */
+export const PARALLAX_SETS = {
+  youth: {
+    prefix: 'stage1_indoor',
+    layers: [['sky', 0.1], ['far', 0.3], ['mid', 0.6], ['near', 0.85]],
+  },
+  middle: {
+    prefix: 'stage2_night',
+    layers: [['sky', 0.1], ['far', 0.3], ['mid', 0.6], ['near', 0.85]],
+  },
+  elder: {
+    prefix: 'stage3_sunset',
+    layers: [['sky', 0.1], ['far', 0.3], ['mid', 0.6], ['near', 0.85]],
+  },
+};
+
+export function createBackground(scene, tint, label, phaseId) {
+  // 兜底底色：视差图缺失时仍然是可玩的纯色背景
   const bg = scene.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, tint).setOrigin(0, 0).setScrollFactor(0);
   bg.setDepth(-100);
+
+  scene.parallaxLayers = [];
+  const set = PARALLAX_SETS[phaseId];
+  if (!set) return bg;
+
+  set.layers.forEach(([layer, factor], i) => {
+    const key = `par_${set.prefix}_${layer}`;
+    if (!scene.textures.exists(key)) return;
+
+    const src = scene.textures.get(key).getSourceImage();
+    const scale = GAME_HEIGHT / (src?.height || GAME_HEIGHT);
+
+    const ts = scene.add
+      .tileSprite(0, 0, GAME_WIDTH, GAME_HEIGHT, key)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(-99 + i);
+    // 平铺单元按比例放大，保证 320×180 的图填满 480×270
+    ts.setTileScale(scale, scale);
+
+    scene.parallaxLayers.push({ sprite: ts, factor });
+  });
 
   return bg;
 }
