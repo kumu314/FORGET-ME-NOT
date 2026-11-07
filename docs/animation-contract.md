@@ -65,7 +65,7 @@
 
 角色演示动作建议 4 帧/240ms，弹道演示 4 帧/320ms；仅是预览节奏，生成弹道和耗蓝由 C 的输入/冷却逻辑负责，禁止依赖 animationcomplete 造成重复发射。空中发射暂复用同一上身动作，世界位移由物理控制；不把复用称为专用空中补帧。
 
-本契约涉及共享接线约定：资源与键名已随 #33 落地，**键名以 C 侧实际代码为准**。C 侧接入已随 #36 落地——`BootScene.create()` 调 `registerSpriteAnimations()` 按 manifest 的 `game.animations` 逐条 `anims.create`；`game/src/scenes/spriteAtlases.js` 提供 `preloadSpriteAtlases` / `registerSpriteAnimations` / `getAnimationKey` / `hasReadyAnimation`；动作→动画名的映射由 `Player.js` 导出的 `selectPlayerAnimation()` 给出（即 #37 所称 `animationMappings`）。A 侧不另加 helper，也不改 C 的接线。D 侧 `playAnim` 遇缺键仍回退 `idle` 并 warn，属预期行为。#19 保持 open 至联调验收。
+本契约涉及共享接线约定：资源与键名已随 #33 落地，**键名以 C 侧实际代码为准**。C 侧接入已随 #36 落地——`BootScene.create()` 调 `registerSpriteAnimations()` 按 manifest 的 `game.animations` 逐条 `anims.create`；`game/src/scenes/spriteAtlases.js` 提供 `preloadSpriteAtlases` / `registerSpriteAnimations` / `getAnimationKey` / `hasReadyAnimation`；动作→动画名的映射由 `Player.js` 导出的 `selectPlayerAnimation()` 给出（即 #37 所称 `animationMappings`）。A 侧不另加 helper，也不改 C 的接线。D 侧 `playAnim` 遇缺键仍回退 `idle` 并 warn，属预期行为。#19 的补帧与接线均已完成（#33 交付资源、#36 完成接入），该 issue 已关闭；剩余 59 键覆盖度实机核对由成员 A 在联调阶段执行。
 
 ## 变更纪律
 
