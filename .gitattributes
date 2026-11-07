@@ -1,0 +1,8 @@
+*.png binary
+*.jpg binary
+*.wav binary
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+
