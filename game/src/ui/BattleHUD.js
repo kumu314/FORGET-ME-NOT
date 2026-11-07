@@ -139,7 +139,7 @@ export class BattleHUD {
   _drawBossBar() {
     if (!this.boss) return;
     const { ctx } = this;
-    const w = 170, x = Math.floor((this.rw - w) / 2), y = 8;
+    const w = 170, x = Math.floor((this.rw - w) / 2), y = 16;
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
     ctx.fillRect(x - 2, y - 12, w + 4, 20);
     ctx.fillStyle = '#ffe15b';

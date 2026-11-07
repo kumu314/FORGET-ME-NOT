@@ -158,6 +158,19 @@ export class AIManager {
     const m = new Cls(this.scene, x, y);
     m.player = this.player;
     this.group.add(m);
+
+    // group.add() 会把 Arcade Group 的默认 body 参数（setGravityY: 0 等）刷到成员身上，
+    // 覆盖 MonsterFSM 构造里刚设好的自承重力 —— 结果地面小怪悬在出生点不下落、
+    // blocked.down 永远为 false（未读红点的跳跃/巡逻判定会失效）。这里补回。
+    if (m.body) {
+      m.body.setAllowGravity(!m.def.flying);
+      if (m.def.flying) {
+        m.body.setGravityY(0);
+      } else {
+        m.body.setGravityY(AI.gravityY);
+      }
+    }
+
     this.monsters.push(m);
     this.scene.events.emit('ai:monster:spawn', { type, x, y });
     return m;
@@ -323,8 +336,15 @@ export class AIManager {
 
     this.bullets.update(time, delta);
 
+    const bottom = this.scene.physics.world.bounds.bottom;
     for (const m of this.monsters) {
-      if (!m.dead && m.active && !m.destroyed) m.update(time, delta);
+      if (m.dead || !m.active || m.destroyed) continue;
+      // 掉出世界（第一关 620~680 有浅坑）：静默回收，否则会一直加速下坠并留在存活列表里
+      if (m.y > bottom + 60) {
+        m.dispose?.();
+        continue;
+      }
+      m.update(time, delta);
     }
     if (this.monsters.some((m) => m.destroyed)) {
       this.monsters = this.monsters.filter((m) => !m.destroyed);

@@ -35,7 +35,8 @@ export const STAGE_SPAWNS = Object.freeze({
       { type: 'paperSpirit', x: 300 },
       { type: 'paperSpirit', x: 470 },
       // 浅坑右侧的落点，跳过去正好接敌
-      { type: 'paperSpirit', x: 700 },
+      // x 必须 ≥ 720：纸精巡逻半径 40，放在 700 会让它一路走进 620~680 的浅坑摔死
+      { type: 'paperSpirit', x: 730 },
       { type: 'paperSpirit', x: 780 },
       // 黑板报前的高台段
       { type: 'paperSpirit', x: 1180 },
