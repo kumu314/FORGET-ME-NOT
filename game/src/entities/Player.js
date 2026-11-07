@@ -17,8 +17,14 @@ import {
   LIFECYCLE,
   MELEE_CHAIN,
   PHYSICS,
+  RANGED_COOLDOWN,
   RANGED_COST,
 } from '../config/gameConfig.js';
+import {
+  getAnimationKey,
+  getPlayerAtlasId,
+  hasReadyAnimation,
+} from '../scenes/spriteAtlases.js';
 import {
   applyDamage,
   canJump,
@@ -35,12 +41,25 @@ import {
   trySpendMp,
 } from './combatMath.js';
 
-/** 阶段占位色（成员A 的 SpriteSheet 到位后移除） */
-const PHASE_TINT = {
-  youth: 0x8fd0ff,
-  middle: 0x5d6b7a,
-  elder: 0xe8dcc0,
-};
+export function selectPlayerAnimation({
+  phaseId,
+  grounded,
+  moving,
+  blocking,
+  hurt,
+  coughing,
+  meleeStage,
+  rangedAction,
+}) {
+  if (hurt) return 'hurt';
+  if (coughing) return 'cough';
+  if (rangedAction) return phaseId === 'elder' ? 'cast' : 'throw';
+  if (meleeStage > 0) return `attack_${meleeStage}`;
+  if (blocking) return 'block';
+  if (!grounded) return phaseId === 'elder' ? 'walk' : 'jump';
+  if (moving) return phaseId === 'elder' ? 'walk' : 'run';
+  return 'idle';
+}
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
   /**
@@ -50,22 +69,25 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
    * @param {{phase?: 'youth'|'middle'|'elder'}} [opts]
    */
   constructor(scene, x, y, opts = {}) {
-    // 占位贴图：24×24 像素块（设计文档：角色 16×16 / 24×24 网格）
-    const textureKey = Player.ensurePlaceholderTexture(scene);
-    super(scene, x, y, textureKey);
+    const phaseId = opts.phase ?? 'youth';
+    const atlasId = getPlayerAtlasId(phaseId);
+    const hasAtlas = scene.textures.exists(atlasId);
+    const textureKey = hasAtlas ? atlasId : Player.ensurePlaceholderTexture(scene);
+    super(scene, x, y, textureKey, hasAtlas ? 'idle_0' : undefined);
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.setOrigin(0.5, 1);
-    this.body.setSize(14, 22);
+    // 图集 pivot 为 (12, 23)：保留最后一排透明安全边，物理底边与脚底对齐。
+    this.setOrigin(0.5, 23 / 24);
+    this.body.setSize(14, 21);
     this.body.setOffset(5, 2);
     this.setCollideWorldBounds(true);
     this.setMaxVelocity(400, PHYSICS.maxFallSpeed);
     this.body.setGravityY(PHYSICS.gravityY);
 
     /** @type {keyof typeof LIFECYCLE} */
-    this.phaseId = opts.phase ?? 'youth';
+    this.phaseId = phaseId;
     this.phase = LIFECYCLE[this.phaseId];
 
     this.facing = 1;
@@ -100,6 +122,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // —— 远程 ——
     this.rangedCooldownMs = 0;
     this.rangedLatch = false;
+    this.rangedActionMs = 0;
 
     // —— 复活 ——
     this.spawnPoint = { x, y };
@@ -116,7 +139,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       onDamaged: opts.onDamaged ?? null,
     };
 
-    this.setTint(PHASE_TINT[this.phaseId]);
+    this._applyPhaseTexture();
+    this._syncAnimation();
   }
 
   /** 无美术资源时生成 24×24 的占位纹理，只生成一次 */
@@ -158,9 +182,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.mp = Math.min(this.mp, this.maxMp);
     }
 
-    this.setTint(PHASE_TINT[this.phaseId]);
+    this._applyPhaseTexture();
     this.meleeStage = 0;
     if (opts.spawn) this.setSpawnPoint(opts.spawn.x, opts.spawn.y);
+    this._syncAnimation();
     return this;
   }
 
@@ -201,6 +226,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (this.isDead) {
       this.setVelocityX(0);
+      this._syncAnimation();
       return;
     }
 
@@ -211,6 +237,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this._handleMelee(input);
     this._handleRanged(input);
     this._tickMelee(delta);
+    this._syncAnimation();
   }
 
   _tickTimers(delta) {
@@ -218,6 +245,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.hurtLockMs = Math.max(0, this.hurtLockMs - delta);
     this.jumpBufferMs = Math.max(0, this.jumpBufferMs - delta);
     this.rangedCooldownMs = Math.max(0, this.rangedCooldownMs - delta);
+    this.rangedActionMs = Math.max(0, this.rangedActionMs - delta);
     this.coughMs = Math.max(0, this.coughMs - delta);
     this.comboSinceActiveMs = Math.min(Number.POSITIVE_INFINITY, this.comboSinceActiveMs + delta);
 
@@ -417,7 +445,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if (remaining === null) return; // 能量不足，放不出来
 
     this.mp = remaining;
-    this.rangedCooldownMs = this.phaseId === 'elder' ? 260 : 340;
+    this.rangedCooldownMs = RANGED_COOLDOWN[this.phaseId] ?? RANGED_COOLDOWN.youth;
+    this.rangedActionMs = 240;
     // 空中投掷（Space + L）：由"是否离地"自然区分，检查点同地面
     this.eventsHooks.onRangedFire?.({
       phaseId: this.phaseId,
@@ -427,6 +456,56 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       airborne: !this.isGrounded,
       owner: this,
     });
+  }
+
+  _applyPhaseTexture() {
+    const atlasId = getPlayerAtlasId(this.phaseId);
+    if (this.scene.textures.exists(atlasId)) {
+      this.setTexture(atlasId, 'idle_0');
+      this.clearTint();
+      this.setOrigin(0.5, 23 / 24);
+      this.body?.setSize(14, 21);
+      this.body?.setOffset(5, 2);
+      return;
+    }
+
+    const placeholder = Player.ensurePlaceholderTexture(this.scene);
+    this.setTexture(placeholder);
+    this.clearTint();
+    this.setOrigin(0.5, 23 / 24);
+    this.body?.setSize(14, 21);
+    this.body?.setOffset(5, 2);
+    console.warn(`[Player] ${atlasId} missing; using generated placeholder`);
+  }
+
+  _syncAnimation() {
+    const atlasId = getPlayerAtlasId(this.phaseId);
+    if (!this.scene.textures.exists(atlasId)) return;
+
+    const desired = selectPlayerAnimation({
+      phaseId: this.phaseId,
+      grounded: this.isGrounded,
+      moving: Math.abs(this.body?.velocity?.x ?? 0) > 1,
+      blocking: this.isBlocking,
+      hurt: this.hurtLockMs > 0,
+      coughing: this.coughMs > 0,
+      meleeStage: this._inRecovery ? this.meleeStage : 0,
+      rangedAction: this.rangedActionMs > 0,
+    });
+
+    let animationName = desired;
+    if (!hasReadyAnimation(this.scene, atlasId, animationName)) {
+      console.warn(`[Player] ${atlasId}:${animationName} missing; falling back to idle`);
+      animationName = 'idle';
+    }
+    if (!hasReadyAnimation(this.scene, atlasId, animationName)) {
+      console.warn(`[Player] ${atlasId}:idle missing; animation stopped`);
+      this.anims.stop();
+      return;
+    }
+
+    const key = getAnimationKey(atlasId, animationName);
+    if (this.anims.currentAnim?.key !== key) this.play({ key, ignoreIfPlaying: true });
   }
 
   // ==========================================================
@@ -505,7 +584,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.meleeStage = 0;
     this.setPosition(spot.x, spot.y);
     this.setVelocity(0, 0);
-    this.setTint(PHASE_TINT[this.phaseId]);
+    this.clearTint();
+    this._applyPhaseTexture();
+    this._syncAnimation();
     this.setAlpha(1);
     return this;
   }
@@ -532,5 +613,3 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 }
-
-export { PHASE_TINT };
