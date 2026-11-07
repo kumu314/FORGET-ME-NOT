@@ -13,18 +13,51 @@ export const PIXEL_FONT_FAMILIES = ['"Zpix"', '"Fusion Pixel"', '"Ark Pixel"'];
 export const FONT_FALLBACK_STACK = '"Microsoft YaHei", "SimHei", "PingFang SC", "Noto Sans CJK SC", sans-serif';
 
 /**
- * 探测像素字体是否可用。纯函数，便于单测（不依赖真实 document）。
+ * 探测像素字体是否可用。
+ *
+ * 为什么不用 `fonts.check()` 单判：`document.fonts.check('12px "Zpix"')` 在字体
+ * **根本不存在**时也会返回 true —— 它只回答「这段文本能否用该字体族渲染」，
+ * 缺族时会静默回退到默认字体再返回 true。用它做唯一判据会让
+ * `applyFontFallback` 在真机上永远早退，回退栈永远注入不进去（实测确认）。
+ *
+ * 因此改为「查 FontFaceSet 里有没有真的加载过这个 family」：
+ *   1. 优先遍历 `fonts`（FontFaceSet 是 iterable），看已加载 FontFace 的 family；
+ *   2. 宿主不支持遍历（只有 check 的假对象 / 老浏览器）时，退回 check 判据，
+ *      保持单测替身与降级环境可用。
+ *
  * @param {Document} doc
  * @returns {boolean}
  */
 export function detectPixelFont(doc = (typeof document !== 'undefined' ? document : undefined)) {
   const fonts = doc && doc.fonts;
-  if (!fonts || typeof fonts.check !== 'function') return false;
+  if (!fonts) return false;
+
+  // 1) 真实 FontFaceSet：遍历已注册/已加载的 FontFace
+  if (typeof fonts[Symbol.iterator] === 'function') {
+    try {
+      const wanted = PIXEL_FONT_FAMILIES.map(normalizeFamily);
+      for (const face of fonts) {
+        if (face && face.status === 'error') continue;
+        if (wanted.includes(normalizeFamily(face.family))) return true;
+      }
+      return false;
+    } catch {
+      // 落到下面的 check 分支
+    }
+  }
+
+  // 2) 降级：只有 check 的环境
+  if (typeof fonts.check !== 'function') return false;
   try {
     return PIXEL_FONT_FAMILIES.some((family) => fonts.check(`12px ${family}`));
   } catch {
     return false;
   }
+}
+
+/** `'"Zpix"'` / `'Zpix'` / `Zpix` → `zpix`，用于 family 名比对 */
+function normalizeFamily(name) {
+  return String(name ?? '').replace(/["']/g, '').trim().toLowerCase();
 }
 
 /**
