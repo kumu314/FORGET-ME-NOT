@@ -1,21 +1,24 @@
 import Phaser from 'phaser';
-import { GAME_WIDTH, PHYSICS } from '../config/gameConfig.js';
+import { GAME_HEIGHT, GAME_WIDTH, PHYSICS } from '../config/gameConfig.js';
 import { WORLD_WIDTH, getStageLayout, validateElderStageIsFlat } from '../config/stageLayout.js';
 import { InputController, createIdleState } from '../core/Input.js';
 import { createBackground, createHud, refreshHud, SOLID_TEXTURE } from './sceneHelpers.js';
-import { EasterEggModal, EGG_PRESETS } from '../ui/EasterEggModal.js';
 import Player from '../entities/Player.js';
 import ChalkBullet from '../entities/ChalkBullet.js';
 import AIManager from '../ai/AIManager.js';
+import { audio } from '../audio/AudioManager.js';
+import { mountBattleHud } from '../ui/HudOverlay.js';
+import { EasterEggModal, EGG_PRESETS } from '../ui/EasterEggModal.js';
+import { TypewriterTransition, TRANSITION_PRESETS } from '../ui/TypewriterTransition.js';
 
 /**
- * 关卡场景（成员C：关卡碰撞检测与检查点复活；issue #16：瓦片上墙 + 两彩蛋 + 检查点）
+ * 关卡场景（成员C：关卡碰撞检测与检查点复活 / 成员D：AI 接线 / 成员E：HUD·弹窗·音频·转场）
  *
  * 一个场景服务三关，靠 init 传入的 phase 切换：
- *  - 地形与彩蛋均由 src/config/stageLayout.js 数据驱动；第一关用 B 的瓦片图集拼装三段布局
- *  - 彩蛋走 E 的 EasterEggModal 特写（打字机 + 全局慢动作），触碰即触发
- *  - 死亡 → 最近接触过的检查点复活（满血满蓝 + 无敌帧）
- *  - T 键切换年龄用于演示生命周期数值与老年"禁跳"、R 键手动复活
+ *  - 地形与彩蛋均由 src/config/stageLayout.js 数据驱动
+ *  - 死亡 → 最近接触过的检查点复活（满血满蓝 + 无敌帧），带死亡遮罩
+ *  - 打完 Boss → 打字机转场 → 自动进下一关；第三关走到公园尽头 → 结局文本
+ *  - T 键切换年龄、R 键手动复活（演示用）
  */
 
 const STAGE_TINT = {
@@ -25,20 +28,39 @@ const STAGE_TINT = {
 };
 
 const PHASE_ORDER = ['youth', 'middle', 'elder'];
+const NEXT_PHASE = { youth: 'middle', middle: 'elder' };
+const NEXT_TRANSITION = { youth: '1to2', middle: '2to3' };
+const BGM_KEY = { youth: 'stage1', middle: 'stage2', elder: 'stage3' };
 
-/** 彩蛋1 手写情书的弹窗文案（GDD 未给出原文，按 §5.5 回忆章节的基调补写） */
-const LETTER_EGG_PRESET = {
-  key: 'letter',
-  title: '桌洞里的手写情书',
-  icon: '💌',
-  theme: 'paper',
-  lines: [
-    '课桌的桌洞深处压着一封没有署名的信，',
-    '信纸边角已经被摩挲得起了毛边。',
-    '“谢谢你总是最后一个走，替我把窗户关好。”',
-  ],
-  reward: '获得永久增益【怦然心动】：近战伤害 +25%',
+/** 彩蛋 id → 成员E 的文案预设 */
+const EGG_BY_ID = {
+  'puppy-box': EGG_PRESETS.dog,
+  'standard-answer': EGG_PRESETS.answer,
+  thermos: EGG_PRESETS.cup,
+  // 彩蛋1 手写情书（issue #16）：GDD 未给原文，按 §5.5 回忆章节基调补写
+  'love-letter': {
+    key: 'letter',
+    title: '桌洞里的手写情书',
+    icon: '💌',
+    theme: 'paper',
+    lines: [
+      '课桌的桌洞深处压着一封没有署名的信，',
+      '信纸边角已经被摩挲得起了毛边。',
+      '“谢谢你总是最后一个走，替我把窗户关好。”',
+    ],
+    reward: '获得永久增益【怦然心动】：近战伤害 +25%',
+  },
 };
+
+/** 第三关走到公园尽头的触发线（孩子终局 Boss 未实装前的保底结局） */
+const ENDING_TRIGGER_X = 1450;
+
+/** 音效只加载一次（三个关卡共用同一份 SFX 缓冲） */
+let sfxLoading = null;
+function ensureSfxLoaded() {
+  if (!sfxLoading) sfxLoading = audio.loadSfx();
+  return sfxLoading;
+}
 
 export default class StageScene extends Phaser.Scene {
   constructor() {
@@ -49,6 +71,8 @@ export default class StageScene extends Phaser.Scene {
     this.targets = [];
     this.respawnPending = false;
     this.inputState = createIdleState();
+    this.modalOpen = false;
+    this.transitioning = false;
     this.eggHelperBugs = [];
   }
 
@@ -67,9 +91,12 @@ export default class StageScene extends Phaser.Scene {
     this.targets = [];
     this.respawnPending = false;
     this.inputState = createIdleState();
+    this.modalOpen = false;
+    this.transitioning = false;
+    this.endingPlayed = false;
+    this.lastHitSfxAt = 0;
+    this.aiListeners = [];
     this.eggHelperBugs = [];
-    this.bg = null;
-    this.breakableState = new Map();
   }
 
   create() {
@@ -78,7 +105,7 @@ export default class StageScene extends Phaser.Scene {
     this.physics.world.gravity.y = 0; // 重力由 Player 自身 gravityY 承担，静态道具无需重力
 
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, height);
-    this.bg = createBackground(this, STAGE_TINT[this.phaseId], this.layout.title);
+    createBackground(this, STAGE_TINT[this.phaseId], this.layout.title, this.phaseId);
 
     this._buildTerrain();
     this._buildCheckpoints();
@@ -88,38 +115,132 @@ export default class StageScene extends Phaser.Scene {
     this._initAI();
 
     this.hud = createHud(this);
+    this._initUiModules();
+
     this.cameras.main.startFollow(this.player, true, 0.2, 0.2);
     this.cameras.main.setDeadzone(60, 40);
 
+    this._buildDemoGuide();
     this._bindDebugKeys();
     this.inputCtl = new InputController(this);
 
     this.events.once('shutdown', () => this._teardown());
     this.cameras.main.fadeIn(220, 0, 0, 0);
+    this._syncHud(0);
   }
 
-  // ==========================================================
-  // 构建
-  // ==========================================================
+  /* ==========================================================
+   * UI / 音频接线（成员E 模块的挂载点）
+   * ========================================================== */
+
+  _initUiModules() {
+    // 1) 战斗 HUD：E 的 Canvas 覆盖层，挂到 Phaser 主画布上方
+    const mount = mountBattleHud(this.game);
+    this.battleHud = mount.hud;
+    this._hudMount = mount;
+    this.battleHud.setStage(this.layout.title);
+
+    // 旧 Phaser 简易 HUD 全部隐藏：血条/读数由 E 的 Canvas HUD 接管，
+    // 它的底部提示条会和 HUD 的 HP/MP 条叠在同一区域（重叠成一团糊字）。
+    for (const key of ['hpBg', 'hpBar', 'mpBg', 'mpBar', 'phaseText', 'hintBg', 'hintText']) {
+      this.hud[key]?.setVisible(false);
+    }
+
+    // 2) 音频：首次用户手势解锁 + 预加载真实素材（失败自动回退合成音）
+    this._unlockAudio = () => audio.unlock();
+    window.addEventListener('pointerdown', this._unlockAudio, { once: true });
+    window.addEventListener('keydown', this._unlockAudio, { once: true });
+    ensureSfxLoaded();
+    audio.stopBgm();
+    audio.startBgm(BGM_KEY[this.phaseId]);
+
+    // 3) 彩蛋弹窗开启时冻结世界（GDD：慢动作居中特写）
+    this._onEggOpen = () => {
+      this.modalOpen = true;
+      this.player?.setVelocity(0, 0);
+      this.physics?.world?.pause?.();
+    };
+    this._onEggClose = () => {
+      this.modalOpen = false;
+      this.physics?.world?.resume?.();
+    };
+    window.addEventListener('egg-modal:open', this._onEggOpen);
+    window.addEventListener('egg-modal:close', this._onEggClose);
+
+    // 4) 战斗事件 → HUD 飘字 / 音效
+    this._bindCombatFeedback();
+  }
+
+  _bindCombatFeedback() {
+    const on = (evt, fn) => {
+      this.events.on(evt, fn, this);
+      this.aiListeners.push([evt, fn]);
+    };
+
+    on('ai:damage', ({ x, y, amount, target }) => {
+      this.battleHud?.spawnDamage(x, y, amount, { crit: amount >= 20 });
+      const now = this.time.now;
+      if (now - this.lastHitSfxAt > 60) {
+        this.lastHitSfxAt = now;
+        audio.play(target === 'boss' ? 'hit_heavy' : 'hit');
+      }
+    });
+
+    on('ai:kill', (info) => {
+      audio.play('pickup');
+      // 解谜借力怪被误杀 → 延时重生，保证"飞踢借力上横梁"路线永不软锁（issue #16）
+      const helper = (this.eggHelperBugs || []).find(
+        (h) => h.spec.type === info?.type && Math.abs(h.spec.x - (info?.x ?? 0)) < 48,
+      );
+      if (helper) {
+        helper.monster = null;
+        this.time.delayedCall(helper.spec.respawnMs ?? 2500, () => {
+          if (this.scene.isActive() && this.ai) {
+            helper.monster = this.ai.spawnMonster(helper.spec.type, helper.spec.x, helper.spec.y);
+          }
+        });
+      }
+    });
+    on('ai:dog:bark', () => audio.play('bark'));
+    on('ai:dog:bite', () => audio.play('bark_attack'));
+    on('ai:dog:heal', ({ amount }) => {
+      audio.play('heal');
+      if (this.player) this.battleHud?.spawnText(this.player.x, this.player.y - 20, `+${amount}`, '#7ddc8a');
+    });
+    on('ai:skill:drop', () => audio.play('mp_up'));
+
+    on('ai:boss:spawn', ({ name, hpMax }) => {
+      this.battleHud?.showBoss({ name, maxHp: hpMax });
+      audio.play('boss_enter');
+    });
+    on('ai:boss:hp', ({ hp }) => this.battleHud?.setBossHp(hp));
+    on('ai:boss:phase', () => {
+      audio.play('boss_warn');
+      this.cameras.main.shake(220, 0.006);
+    });
+  }
+
+  /* ==========================================================
+   * 构建
+   * ========================================================== */
 
   _buildTerrain() {
     this.solids = this.physics.add.staticGroup();
 
     for (const s of this.layout.solids) {
       const key = SOLID_TEXTURE[s.kind] ?? SOLID_TEXTURE.ground;
-
       // 第一关由 tiles 数据负责贴图（B 的瓦片），其余关沿用占位纹理
       if (this.layout.tiles.length === 0) {
         this.add.tileSprite(s.x, s.y, s.w, s.h, key).setOrigin(0, 0).setDepth(10);
       }
 
-      // 每个地形配一个不可见静态体，按矩形精确对齐碰撞盒
-      // ⚠️ 顺序必须是先 refreshBody 后 setSize：StaticBody.refreshBody() 会按纹理帧
-      // 重置尺寸（16×16），放在 setSize 之后会把它改回去，地形碰撞实际只有一格大。
-      const body = this.physics.add.staticImage(s.x + s.w / 2, s.y + s.h / 2, key);
+      // 碰撞体用不可见矩形直接建静态体：体积天然等于地形矩形。
+      // 不能用 staticImage + setSize + refreshBody —— refreshBody() 会把刚设好的
+      // 尺寸重新同步回贴图尺寸（16×16），地表/平台只剩一个 16px 的小方块，
+      // 玩家和小怪会直接穿过地面掉到世界底部。
+      const body = this.add.rectangle(s.x + s.w / 2, s.y + s.h / 2, s.w, s.h, 0x000000, 0);
       body.setVisible(false);
-      body.refreshBody();
-      body.setSize(s.w, s.h);
+      this.physics.add.existing(body, true);
       this.solids.add(body);
 
       if (s.label) {
@@ -137,24 +258,34 @@ export default class StageScene extends Phaser.Scene {
     this._paintTiles();
   }
 
-  /** 数据驱动上墙：{ t: 帧名, x, y, w?, h? } 按"墙带→道具→地面"次序绘制，后画盖先画 */
+  /** 数据驱动上墙（issue #16）：{ t: 帧名, x, y, w?, h? }，按"墙带→道具→地面"次序绘制，后画盖先画 */
   _paintTiles() {
     for (const op of this.layout.tiles) {
       const cols = op.w ?? 1;
       const rows = op.h ?? 1;
-      const img = this.add
-        .image(op.x, op.y, 'school_corridor', op.t)
-        .setOrigin(0, 0)
-        .setDepth(10);
       if (cols > 1 || rows > 1) {
-        // 跑排瓦片：用 tileSprite 平铺，保持与单帧一致的像素密度
-        img.destroy();
+        // 跑排瓦片：用 tileSprite 平铺，Phaser 会为图集帧生成填充纹理
         this.add
           .tileSprite(op.x, op.y, cols * 16, rows * 16, 'school_corridor', op.t)
           .setOrigin(0, 0)
           .setDepth(10);
+      } else {
+        this.add.image(op.x, op.y, 'school_corridor', op.t).setOrigin(0, 0).setDepth(10);
       }
     }
+  }
+
+  /** 可打碎物（issue #16）：近战命中 → 换帧/散纸 → 掉落彩蛋 */
+  _buildBreakables() {
+    this.breakables = this.layout.breakables.map((b) => {
+      if (b.kind === 'paper-pile') {
+        const books = this.add.image(b.x - 12, 216, 'school_corridor', 'books_stack').setOrigin(0, 0).setDepth(11);
+        const scraps = this.add.image(b.x + 4, 224, 'school_corridor', 'paper_scrap').setOrigin(0, 0).setDepth(11);
+        return { ...b, parts: [books, scraps], smashed: false };
+      }
+      // 纸箱贴图归 _buildEasterEggs 的 puppy-box 彩蛋管理，这里只登记判定点
+      return { ...b, parts: [], smashed: false };
+    });
   }
 
   _buildCheckpoints() {
@@ -166,38 +297,24 @@ export default class StageScene extends Phaser.Scene {
     this.activeCheckpointIndex = 0;
   }
 
-  /** 可打碎物：近战命中 → 换帧/散纸 → 掉落彩蛋（issue #16 桌洞纸堆 → 手写情书） */
-  _buildBreakables() {
-    this.breakables = this.layout.breakables.map((b) => {
-      if (b.kind === 'paper-pile') {
-        const books = this.add.image(b.x - 12, 216, 'school_corridor', 'books_stack').setOrigin(0, 0).setDepth(11);
-        const scraps = this.add.image(b.x + 4, 224, 'school_corridor', 'paper_scrap').setOrigin(0, 0).setDepth(11);
-        return { ...b, parts: [books, scraps], smashed: false };
-      }
-      if (b.kind === 'box') {
-        // 纸箱贴图归 _buildEasterEggs 的 puppy-box 彩蛋管理，这里只登记判定点
-        return { ...b, parts: [], smashed: false };
-      }
-      return { ...b, parts: [], smashed: false };
-    });
-  }
-
   _buildEasterEggs() {
     this.easterEggs = this.layout.easterEggs.map((egg) => {
+      // B 的正式彩蛋贴图就位后按 id 换装；缺失时回退占位方块
       let marker;
-      if (egg.id === 'puppy-box') {
+      if (egg.id === 'puppy-box' && this.textures.exists('easter_eggs')) {
         marker = this.add.image(egg.x, egg.y - 16, 'easter_eggs', 'box_closed').setDepth(12);
-        // 封条未碎时轻微颤动（B 的 tremble 帧交替）
+        // 封条未碎时轻微颤动（B 的 tremble 帧交替，GDD §4.4 "纸箱微微颤动"）
         this.time.addEvent({
           delay: 420,
           loop: true,
           callback: () => {
-            if (!egg.smashed && marker.active) {
+            const live = this.easterEggs?.find((e) => e.id === egg.id);
+            if (!live?.smashed && marker.active) {
               marker.setTexture('easter_eggs', Math.random() < 0.5 ? 'box_tremble_a' : 'box_tremble_b');
             }
           },
         });
-      } else if (egg.id === 'standard-answer') {
+      } else if (egg.id === 'standard-answer' && this.textures.exists('easter_eggs')) {
         marker = this.add.image(egg.x, egg.y - 8, 'easter_eggs', 'answer_card_a').setDepth(12);
         this.time.addEvent({
           delay: 380,
@@ -231,10 +348,13 @@ export default class StageScene extends Phaser.Scene {
     this.player = new Player(this, spawn.x, spawn.y, {
       phase: this.phaseId,
       onCough: () => this._flashCough(),
-      onRangedFire: (shot) => this._fireBullet(shot),
+      onRangedFire: (shot) => {
+        audio.play('throw');
+        this._fireBullet(shot);
+      },
       // 近战结算入口：先打碎场景可碎物，AIManager 会在 installPlayerHooks 里链上小怪结算
       onMeleeHit: (info) => this._onPlayerMelee(info),
-      onDamaged: (info) => this._showDamageText(info),
+      onDamaged: (info) => this._onPlayerDamaged(info),
       onDeath: () => this._onPlayerDeath(),
     });
     this.player.setSpawnPoint(spawn.x, spawn.y);
@@ -251,33 +371,16 @@ export default class StageScene extends Phaser.Scene {
     this.ai.applyStage(this.phaseId);
     this._spawnEggHelpers();
 
-    // Boss 战结算反馈（血条由 E 的 BattleHUD 监听 ai:boss:hp / ai:boss:phase）
+    // Boss 战结算：胜利标识 → 打字机转场 → 下一关
     this._onBossDefeated = ({ kind }) => {
       this.cameras.main.flash(420, 255, 240, 190);
       this._toast(kind === 'teacher' ? '下课铃响了——交卷吧' : '暴雨停了');
+      this._showVictoryBanner(kind);
+      this.battleHud?.hideBoss();
+      audio.play('victory');
+      this.time.delayedCall(1400, () => this._advanceStage());
     };
     this.events.on('ai:boss:defeated', this._onBossDefeated, this);
-
-    // 解谜借力怪被误杀 → 延时重生，保证"飞踢借力上横梁"路线永不软锁
-    this._onAiKill = (info) => {
-      const helper = this.eggHelperBugs.find(
-        (h) => h.spec.type === info.type && Math.abs(h.spec.x - info.x) < 48,
-      );
-      if (!helper || !this.scene.isActive()) return;
-      helper.monster = null;
-      this.time.delayedCall(helper.spec.respawnMs ?? 2500, () => {
-        if (this.scene.isActive()) helper.monster = this.ai?.spawnMonster(helper.spec.type, helper.spec.x, helper.spec.y);
-      });
-    };
-    this.events.on('ai:kill', this._onAiKill, this);
-  }
-
-  /** 彩蛋解谜浮空借力怪（stageLayout.eggHelpers，y 为显式悬停高度） */
-  _spawnEggHelpers() {
-    for (const spec of this.layout.eggHelpers) {
-      const monster = this.ai.spawnMonster(spec.type, spec.x, spec.y);
-      this.eggHelperBugs.push({ spec, monster });
-    }
   }
 
   /** 当前关卡地面的顶面 y */
@@ -286,9 +389,47 @@ export default class StageScene extends Phaser.Scene {
     return ground.length ? Math.min(...ground.map((s) => s.y)) : 240;
   }
 
-  // ==========================================================
-  // 输入
-  // ==========================================================
+  /** 彩蛋解谜浮空借力怪（stageLayout.eggHelpers，y 为显式悬停高度；issue #16 飞踢借力上横梁） */
+  _spawnEggHelpers() {
+    for (const spec of this.layout.eggHelpers) {
+      const monster = this.ai.spawnMonster(spec.type, spec.x, spec.y);
+      this.eggHelperBugs.push({ spec, monster });
+    }
+  }
+
+  /* ==========================================================
+   * 关卡推进
+   * ========================================================== */
+
+  async _advanceStage() {
+    if (this.transitioning) return;
+    this.transitioning = true;
+    audio.stopBgm();
+
+    const next = NEXT_PHASE[this.phaseId];
+    const preset = next ? TRANSITION_PRESETS[NEXT_TRANSITION[this.phaseId]] : TRANSITION_PRESETS.ending;
+
+    await TypewriterTransition.play(preset, { onTick: () => audio.play('typing') });
+
+    this.transitioning = false;
+    if (next) {
+      this.scene.restart({ phase: next });
+    } else {
+      this._toast('—— 完 ——');
+    }
+  }
+
+  /** 第三关：走到公园尽头触发保底结局（孩子终局 Boss 见 issue #23） */
+  _checkEnding() {
+    if (this.phaseId !== 'elder' || this.endingPlayed) return;
+    if (this.player.x < ENDING_TRIGGER_X) return;
+    this.endingPlayed = true;
+    this._advanceStage();
+  }
+
+  /* ==========================================================
+   * 输入
+   * ========================================================== */
 
   _bindDebugKeys() {
     const kb = this.input.keyboard;
@@ -296,7 +437,11 @@ export default class StageScene extends Phaser.Scene {
     // 注意：input.keyboard 是全局插件，scene.restart() 不会自动解绑，
     // 所以这里保存函数引用，在 _teardown() 里成对 off 掉，否则每次重开都会多绑一次。
     this._onKeyT = () => this._cyclePhase();
-    this._onKeyR = () => this.player?.respawn(this._activeCheckpoint());
+    this._onKeyR = () => {
+      this._hideDeathOverlay();
+      this.player?.respawn(this._activeCheckpoint());
+      this.respawnPending = false;
+    };
     kb.on('keydown-T', this._onKeyT);
     kb.on('keydown-R', this._onKeyR);
   }
@@ -312,33 +457,51 @@ export default class StageScene extends Phaser.Scene {
   // ==========================================================
 
   update(time, delta) {
-    // 彩蛋弹窗开启：全局慢动作（E 的 EasterEggModal 约定）——玩家按慢速走，敌人与子弹暂停
-    const modalOpen = EasterEggModal.isOpen;
-    const ts = modalOpen ? EasterEggModal.timeScale : 1;
-    const input = modalOpen ? createIdleState() : (this.inputCtl?.update() ?? this.inputState);
+    // 彩蛋弹窗 / 转场期间冻结玩法，只继续刷 HUD
+    if (this.modalOpen || this.transitioning) {
+      this._syncHud(delta);
+      return;
+    }
+
+    const input = this.inputCtl?.update() ?? this.inputState;
     this.inputState = input;
 
-    this.player.update(delta * ts, input);
-    if (!modalOpen) {
-      this.ai?.update(time, delta);
-      this._updateBullets();
-    }
+    this.player.update(delta, input);
+    this.ai?.update(time, delta);
     this.player.setDebugMeleeBox(true);
 
-    // 老年记忆碎片的追踪目标（ChalkBullet 读 scene.targets）
+    // 老年记忆碎片的追踪目标（ChalkBullet 读 scene.targets；含 Boss）
     this.targets = this.ai ? [...this.ai.aliveMonsters(), this.ai.activeBoss()].filter(Boolean) : [];
 
-    this._updateParallax();
     this._updateCheckpoints();
-    if (!modalOpen) this._updateEasterEggs();
+    this._updateEasterEggs();
+    this._updateBullets();
+    this._updateParallax();
+    this._checkEnding();
     refreshHud(this, this.hud, this.player);
+    this._syncHud(delta);
   }
 
+  /** 视差背景：按相机横向滚动量推进每一层的 tilePosition */
   _updateParallax() {
     const scrollX = this.cameras.main.scrollX;
-    for (const layer of this.bg?.layers ?? []) {
-      layer.ts.tilePositionX = scrollX * layer.factor;
+    for (const { sprite, factor } of this.parallaxLayers || []) {
+      sprite.tilePositionX = scrollX * factor;
     }
+  }
+
+  /** 把相机与玩家数值同步给 E 的 Canvas HUD 并渲染一帧 */
+  _syncHud(delta) {
+    if (!this.battleHud || !this.player) return;
+    const cam = this.cameras.main;
+    this.battleHud.setCamera({ x: cam.scrollX, y: cam.scrollY });
+    this.battleHud.setPlayer({
+      hp: this.player.hp,
+      maxHp: this.player.maxHp,
+      mp: this.player.mp,
+      maxMp: this.player.maxMp,
+    });
+    this.battleHud.render(Math.min(delta, 50) / 1000);
   }
 
   _activeCheckpoint() {
@@ -354,13 +517,60 @@ export default class StageScene extends Phaser.Scene {
         this.player.setSpawnPoint(cp.x, cp.y);
         this.checkpointMarkers.forEach((m, idx) => m.setAlpha(idx <= i ? 1 : 0.55));
         this.cameras.main.flash(120, 255, 215, 106);
-        this._toast(`检查点已点亮：${cp.label}`);
+        audio.play('checkpoint');
         break;
       }
     }
   }
 
-  /** 近战结算入口：打碎可碎物（纸堆 / 纸箱封条）；小怪结算由 AIManager 链式处理 */
+  _updateEasterEggs() {
+    for (const egg of this.easterEggs) {
+      if (egg.taken) continue;
+      if (Math.abs(this.player.x - egg.x) < 14 && Math.abs(this.player.y - egg.y) < 40) {
+        // 纸箱两段式（GDD §4.4）：封条未碎只提示，不触发
+        if (egg.id === 'puppy-box' && !egg.smashed) {
+          if (!egg.hintedAt || this.time.now - egg.hintedAt > 1600) {
+            egg.hintedAt = this.time.now;
+            this._toast('纸箱在颤动……用 J 打开封条试试');
+          }
+          continue;
+        }
+
+        egg.taken = true;
+        egg.marker.setTint(0x88ff88);
+        this._openEasterEgg(egg.id);
+      }
+    }
+  }
+
+  /** 彩蛋：先发增益，再弹成员E 的慢动作特写卡片 */
+  _openEasterEgg(id) {
+    if (id === 'standard-answer') {
+      this.player.grantStandardAnswer();
+      this._toast('拾取【标准答案】：能量上限 80 · 回能 4/s');
+    } else if (id === 'love-letter') {
+      // 彩蛋1（issue #16）：情书 → 【怦然心动】近战伤害 +25%
+      this.player.grantLoveLetter();
+      this._toast('拾取【手写情书】：近战伤害 +25%（怦然心动）');
+    } else if (id === 'puppy-box') {
+      // 纸箱 → 忠犬入队（写 registry，二/三关自动继承形态）
+      this.ai?.onEasterEgg('puppy-box');
+    } else if (id === 'thermos') {
+      this._toast('获得【暖心守护】：随从进化');
+    }
+
+    const preset = EGG_BY_ID[id];
+    if (!preset) return;
+
+    audio.play('egg');
+    EasterEggModal.open({
+      ...preset,
+      onTick: () => audio.play('typing'),
+      onClose: () => audio.play('ui'),
+    });
+  }
+
+  /** 近战结算入口（issue #16）：打碎可碎物（纸堆/纸箱封条）；小怪结算由 AIManager 链式处理 */
   _onPlayerMelee(info) {
     if (!info?.box) return;
     for (const b of this.breakables ?? []) {
@@ -422,53 +632,16 @@ export default class StageScene extends Phaser.Scene {
     const egg = this.easterEggs.find((e) => e.id === 'puppy-box');
     if (!egg) return;
     egg.smashed = true;
-    egg.marker.setTexture('easter_eggs', 'box_open');
-    const bubble = this.add.image(egg.x, egg.y - 40, 'easter_eggs', 'bubble_wuu').setDepth(13);
-    this.tweens.add({
-      targets: bubble,
-      y: bubble.y - 6,
-      alpha: 0,
-      duration: 1500,
-      onComplete: () => bubble.destroy(),
-    });
-  }
-
-  _updateEasterEggs() {
-    for (const egg of this.easterEggs) {
-      if (egg.taken) continue;
-      if (Math.abs(this.player.x - egg.x) < 14 && Math.abs(this.player.y - egg.y) < 40) {
-        if (egg.id === 'puppy-box' && !egg.smashed) {
-          // 封条未碎：只提示，不触发（GDD §4.4：先 J 打碎封条与杂物，再触碰）
-          if (!egg.hintedAt || this.time.now - egg.hintedAt > 1600) {
-            egg.hintedAt = this.time.now;
-            this._toast('纸箱在颤动……用 J 打开封条试试');
-          }
-          continue;
-        }
-
-        egg.taken = true;
-        egg.marker.setTint(0x88ff88);
-        this._openEggModal(egg);
-      }
-    }
-  }
-
-  /** 彩蛋特写：E 的打字机弹窗 + 全局慢动作；增益在触碰瞬间生效 */
-  _openEggModal(egg) {
-    if (egg.id === 'standard-answer') {
-      this.player.grantStandardAnswer();
-      this._toast('拾取【标准答案】：能量上限 80 · 回能 4/s · 红笔穿透');
-      EasterEggModal.open({ ...EGG_PRESETS.answer });
-    } else if (egg.id === 'love-letter') {
-      this.player.grantLoveLetter();
-      this._toast('拾取【手写情书】：近战伤害 +25%（怦然心动）');
-      EasterEggModal.open({ ...LETTER_EGG_PRESET });
-    } else if (egg.id === 'puppy-box') {
-      // 纸箱 → 忠犬入队（写 registry，二/三关自动继承形态）
-      this.ai?.onEasterEgg('puppy-box');
-      EasterEggModal.open({ ...EGG_PRESETS.dog });
-    } else {
-      this._toast('发现彩蛋');
+    if (this.textures.exists('easter_eggs')) {
+      egg.marker.setTexture('easter_eggs', 'box_open');
+      const bubble = this.add.image(egg.x, egg.y - 40, 'easter_eggs', 'bubble_wuu').setDepth(13);
+      this.tweens.add({
+        targets: bubble,
+        y: bubble.y - 6,
+        alpha: 0,
+        duration: 1500,
+        onComplete: () => bubble.destroy(),
+      });
     }
   }
 
@@ -510,11 +683,20 @@ export default class StageScene extends Phaser.Scene {
     this.bullets.push(bullet);
   }
 
+  _onPlayerDamaged(info) {
+    this.battleHud?.hurtFlash();
+    audio.play(info?.result?.blocked ? 'block' : 'hurt');
+    this._showDamageText(info);
+  }
+
   _onPlayerDeath() {
     if (this.respawnPending) return;
     this.respawnPending = true;
+    audio.play('death');
     this.cameras.main.shake(180, 0.008);
-    this.time.delayedCall(PHYSICS.respawnDelayMs, () => {
+    this._showDeathOverlay();
+    this.time.delayedCall(PHYSICS.respawnDelayMs + 600, () => {
+      this._hideDeathOverlay();
       this.player.respawn(this._activeCheckpoint());
       this.respawnPending = false;
     });
@@ -540,6 +722,57 @@ export default class StageScene extends Phaser.Scene {
       duration: 520,
       onComplete: () => label.destroy(),
     });
+  }
+
+  _showDeathOverlay() {
+    this.deathOverlay = this.add
+      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(5000);
+    this.deathText = this.add
+      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, '按 R 复活', {
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        color: '#ffffff',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(5001);
+  }
+
+  _hideDeathOverlay() {
+    this.deathOverlay?.destroy();
+    this.deathText?.destroy();
+    this.deathOverlay = null;
+    this.deathText = null;
+  }
+
+  _showVictoryBanner(kind) {
+    this.add
+      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 20, kind === 'teacher' ? '课程结束' : '雨过天晴', {
+        fontFamily: 'monospace',
+        fontSize: '16px',
+        color: '#ffffff',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(6000);
+  }
+
+  _buildDemoGuide() {
+    const guide = this.add
+      .text(10, 44, 'A/D 移动   Space 跳跃   S 格挡\nJ 近战   L 远程   T 切年龄   R 复活', {
+        fontFamily: 'monospace',
+        fontSize: '8px',
+        color: '#d7f5d8',
+        lineSpacing: 2,
+        backgroundColor: '#000000aa',
+        padding: { x: 4, y: 3 },
+      })
+      .setScrollFactor(0)
+      .setDepth(2000);
+    this.tweens.add({ targets: guide, alpha: 0, duration: 1200, delay: 6000 });
   }
 
   /** 老年按 Space：只冒一个咳嗽气泡，绝不产生竖直速度 */
@@ -585,14 +818,27 @@ export default class StageScene extends Phaser.Scene {
       this.events.off('ai:boss:defeated', this._onBossDefeated, this);
       this._onBossDefeated = null;
     }
-    if (this._onAiKill) {
-      this.events.off('ai:kill', this._onAiKill, this);
-      this._onAiKill = null;
+
+    // AI 战斗反馈监听必须成对解绑：scene.events 在 restart 时不会自动清空
+    for (const [evt, fn] of this.aiListeners || []) {
+      this.events.off(evt, fn, this);
     }
-    if (EasterEggModal.isOpen) EasterEggModal.close();
+    this.aiListeners = [];
 
     this.ai?.destroy();
     this.ai = null;
+
+    // UI / 音频收尾
+    window.removeEventListener('egg-modal:open', this._onEggOpen);
+    window.removeEventListener('egg-modal:close', this._onEggClose);
+    window.removeEventListener('pointerdown', this._unlockAudio);
+    window.removeEventListener('keydown', this._unlockAudio);
+    EasterEggModal.close();
+    this.physics?.world?.resume?.();
+    this._hudMount?.destroy();
+    this._hudMount = null;
+    this.battleHud = null;
+    audio.stopBgm();
 
     this.inputCtl?.destroy();
     this.inputCtl = null;
