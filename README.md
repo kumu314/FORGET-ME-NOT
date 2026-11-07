@@ -71,7 +71,7 @@ npm run build    # 产出纯静态文件到 game/dist
     └── scenes/                 # Boot + 关卡场景（全员协作）
 ```
 
-以上路径均相对于 `game/`。静态资源放在 `game/public/assets/`（`sprites/` 成员A · `tilesets/` 成员B · `audio/` 成员E）。
+以上路径均相对于 `game/`。静态资源放 `game/public/assets/`（`sprites/` 成员A · `tilesets/` 成员B · `audio/` 成员E），Vite 会原样拷贝到 `game/dist/assets/` 并可被浏览器直接访问。
 
 ## 团队
 
