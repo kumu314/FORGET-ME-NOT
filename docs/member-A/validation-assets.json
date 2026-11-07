@@ -1,0 +1,1826 @@
+{
+  "checkedAt": "2026-11-07T06:06:52.622Z",
+  "scope": "All 9 PNG and matching JSON atlases named in the member-A manifest. Pixel decode of exported files, not source mockups.",
+  "assetCount": 9,
+  "totalFrames": 200,
+  "passed": 9,
+  "issues": [],
+  "warnings": [],
+  "results": [
+    {
+      "id": "player_youth",
+      "pass": true,
+      "frameCount": 32,
+      "dimensions": [
+        96,
+        192
+      ],
+      "paletteColors": 32,
+      "bytes": 5363,
+      "sha256": "3c6a260f029fd10a708157d5cae716266a4c075405008451ffff62d24638eac7",
+      "animations": [
+        {
+          "name": "idle",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "run",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "jump",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "hurt",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "attack_1",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "attack_2",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "attack_3",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "block",
+          "frames": 4,
+          "unique": 4
+        }
+      ],
+      "boxes": {
+        "idle_0": {
+          "x": 7,
+          "y": 3,
+          "w": 10,
+          "h": 20,
+          "opaque": 130
+        },
+        "idle_1": {
+          "x": 8,
+          "y": 3,
+          "w": 9,
+          "h": 20,
+          "opaque": 128
+        },
+        "idle_2": {
+          "x": 8,
+          "y": 3,
+          "w": 8,
+          "h": 20,
+          "opaque": 126
+        },
+        "idle_3": {
+          "x": 8,
+          "y": 3,
+          "w": 9,
+          "h": 20,
+          "opaque": 126
+        },
+        "run_0": {
+          "x": 4,
+          "y": 3,
+          "w": 15,
+          "h": 20,
+          "opaque": 156
+        },
+        "run_1": {
+          "x": 7,
+          "y": 3,
+          "w": 12,
+          "h": 20,
+          "opaque": 125
+        },
+        "run_2": {
+          "x": 5,
+          "y": 5,
+          "w": 14,
+          "h": 18,
+          "opaque": 142
+        },
+        "run_3": {
+          "x": 4,
+          "y": 3,
+          "w": 15,
+          "h": 20,
+          "opaque": 150
+        },
+        "jump_0": {
+          "x": 5,
+          "y": 8,
+          "w": 14,
+          "h": 15,
+          "opaque": 114
+        },
+        "jump_1": {
+          "x": 6,
+          "y": 4,
+          "w": 13,
+          "h": 19,
+          "opaque": 128
+        },
+        "jump_2": {
+          "x": 6,
+          "y": 7,
+          "w": 12,
+          "h": 16,
+          "opaque": 116
+        },
+        "jump_3": {
+          "x": 6,
+          "y": 4,
+          "w": 12,
+          "h": 19,
+          "opaque": 126
+        },
+        "hurt_0": {
+          "x": 7,
+          "y": 3,
+          "w": 10,
+          "h": 20,
+          "opaque": 129
+        },
+        "hurt_1": {
+          "x": 3,
+          "y": 4,
+          "w": 16,
+          "h": 19,
+          "opaque": 152
+        },
+        "hurt_2": {
+          "x": 5,
+          "y": 4,
+          "w": 13,
+          "h": 19,
+          "opaque": 137
+        },
+        "hurt_3": {
+          "x": 6,
+          "y": 4,
+          "w": 11,
+          "h": 19,
+          "opaque": 130
+        },
+        "attack_1_0": {
+          "x": 6,
+          "y": 3,
+          "w": 12,
+          "h": 20,
+          "opaque": 149
+        },
+        "attack_1_1": {
+          "x": 5,
+          "y": 3,
+          "w": 15,
+          "h": 20,
+          "opaque": 147
+        },
+        "attack_1_2": {
+          "x": 5,
+          "y": 4,
+          "w": 14,
+          "h": 19,
+          "opaque": 145
+        },
+        "attack_1_3": {
+          "x": 6,
+          "y": 3,
+          "w": 11,
+          "h": 20,
+          "opaque": 146
+        },
+        "attack_2_0": {
+          "x": 6,
+          "y": 3,
+          "w": 11,
+          "h": 20,
+          "opaque": 147
+        },
+        "attack_2_1": {
+          "x": 5,
+          "y": 3,
+          "w": 16,
+          "h": 20,
+          "opaque": 157
+        },
+        "attack_2_2": {
+          "x": 6,
+          "y": 4,
+          "w": 13,
+          "h": 19,
+          "opaque": 142
+        },
+        "attack_2_3": {
+          "x": 6,
+          "y": 3,
+          "w": 12,
+          "h": 20,
+          "opaque": 142
+        },
+        "attack_3_0": {
+          "x": 4,
+          "y": 3,
+          "w": 15,
+          "h": 20,
+          "opaque": 158
+        },
+        "attack_3_1": {
+          "x": 4,
+          "y": 3,
+          "w": 16,
+          "h": 20,
+          "opaque": 152
+        },
+        "attack_3_2": {
+          "x": 3,
+          "y": 4,
+          "w": 20,
+          "h": 19,
+          "opaque": 167
+        },
+        "attack_3_3": {
+          "x": 1,
+          "y": 3,
+          "w": 16,
+          "h": 20,
+          "opaque": 154
+        },
+        "block_0": {
+          "x": 5,
+          "y": 5,
+          "w": 12,
+          "h": 18,
+          "opaque": 136
+        },
+        "block_1": {
+          "x": 5,
+          "y": 8,
+          "w": 13,
+          "h": 15,
+          "opaque": 127
+        },
+        "block_2": {
+          "x": 4,
+          "y": 9,
+          "w": 14,
+          "h": 14,
+          "opaque": 125
+        },
+        "block_3": {
+          "x": 5,
+          "y": 5,
+          "w": 12,
+          "h": 18,
+          "opaque": 132
+        }
+      }
+    },
+    {
+      "id": "player_middle",
+      "pass": true,
+      "frameCount": 32,
+      "dimensions": [
+        96,
+        192
+      ],
+      "paletteColors": 23,
+      "bytes": 5308,
+      "sha256": "02b869418a81b62a9312fa393fab49619439820ae5111c3baa909597400756ee",
+      "animations": [
+        {
+          "name": "idle",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "run",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "jump",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "hurt",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "attack_1",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "attack_2",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "attack_3",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "block",
+          "frames": 4,
+          "unique": 4
+        }
+      ],
+      "boxes": {
+        "idle_0": {
+          "x": 6,
+          "y": 4,
+          "w": 12,
+          "h": 19,
+          "opaque": 152
+        },
+        "idle_1": {
+          "x": 5,
+          "y": 4,
+          "w": 13,
+          "h": 19,
+          "opaque": 153
+        },
+        "idle_2": {
+          "x": 6,
+          "y": 4,
+          "w": 12,
+          "h": 19,
+          "opaque": 156
+        },
+        "idle_3": {
+          "x": 5,
+          "y": 4,
+          "w": 13,
+          "h": 19,
+          "opaque": 154
+        },
+        "run_0": {
+          "x": 3,
+          "y": 5,
+          "w": 16,
+          "h": 18,
+          "opaque": 173
+        },
+        "run_1": {
+          "x": 4,
+          "y": 5,
+          "w": 15,
+          "h": 18,
+          "opaque": 161
+        },
+        "run_2": {
+          "x": 4,
+          "y": 4,
+          "w": 16,
+          "h": 19,
+          "opaque": 166
+        },
+        "run_3": {
+          "x": 4,
+          "y": 6,
+          "w": 17,
+          "h": 17,
+          "opaque": 167
+        },
+        "jump_0": {
+          "x": 4,
+          "y": 8,
+          "w": 15,
+          "h": 15,
+          "opaque": 137
+        },
+        "jump_1": {
+          "x": 3,
+          "y": 5,
+          "w": 17,
+          "h": 18,
+          "opaque": 157
+        },
+        "jump_2": {
+          "x": 3,
+          "y": 7,
+          "w": 16,
+          "h": 16,
+          "opaque": 151
+        },
+        "jump_3": {
+          "x": 3,
+          "y": 4,
+          "w": 16,
+          "h": 19,
+          "opaque": 165
+        },
+        "hurt_0": {
+          "x": 6,
+          "y": 5,
+          "w": 12,
+          "h": 18,
+          "opaque": 150
+        },
+        "hurt_1": {
+          "x": 3,
+          "y": 4,
+          "w": 17,
+          "h": 19,
+          "opaque": 189
+        },
+        "hurt_2": {
+          "x": 4,
+          "y": 5,
+          "w": 14,
+          "h": 18,
+          "opaque": 170
+        },
+        "hurt_3": {
+          "x": 5,
+          "y": 5,
+          "w": 13,
+          "h": 18,
+          "opaque": 152
+        },
+        "attack_1_0": {
+          "x": 3,
+          "y": 5,
+          "w": 16,
+          "h": 18,
+          "opaque": 177
+        },
+        "attack_1_1": {
+          "x": 2,
+          "y": 5,
+          "w": 21,
+          "h": 18,
+          "opaque": 176
+        },
+        "attack_1_2": {
+          "x": 4,
+          "y": 5,
+          "w": 18,
+          "h": 18,
+          "opaque": 171
+        },
+        "attack_1_3": {
+          "x": 5,
+          "y": 5,
+          "w": 13,
+          "h": 18,
+          "opaque": 162
+        },
+        "attack_2_0": {
+          "x": 3,
+          "y": 5,
+          "w": 16,
+          "h": 18,
+          "opaque": 179
+        },
+        "attack_2_1": {
+          "x": 3,
+          "y": 5,
+          "w": 20,
+          "h": 18,
+          "opaque": 182
+        },
+        "attack_2_2": {
+          "x": 3,
+          "y": 5,
+          "w": 19,
+          "h": 18,
+          "opaque": 169
+        },
+        "attack_2_3": {
+          "x": 5,
+          "y": 5,
+          "w": 13,
+          "h": 18,
+          "opaque": 164
+        },
+        "attack_3_0": {
+          "x": 3,
+          "y": 5,
+          "w": 16,
+          "h": 18,
+          "opaque": 173
+        },
+        "attack_3_1": {
+          "x": 1,
+          "y": 2,
+          "w": 18,
+          "h": 21,
+          "opaque": 191
+        },
+        "attack_3_2": {
+          "x": 1,
+          "y": 5,
+          "w": 22,
+          "h": 18,
+          "opaque": 175
+        },
+        "attack_3_3": {
+          "x": 1,
+          "y": 5,
+          "w": 17,
+          "h": 18,
+          "opaque": 164
+        },
+        "block_0": {
+          "x": 6,
+          "y": 5,
+          "w": 12,
+          "h": 18,
+          "opaque": 150
+        },
+        "block_1": {
+          "x": 4,
+          "y": 7,
+          "w": 15,
+          "h": 16,
+          "opaque": 151
+        },
+        "block_2": {
+          "x": 4,
+          "y": 9,
+          "w": 15,
+          "h": 14,
+          "opaque": 141
+        },
+        "block_3": {
+          "x": 4,
+          "y": 6,
+          "w": 16,
+          "h": 17,
+          "opaque": 161
+        }
+      }
+    },
+    {
+      "id": "player_elder",
+      "pass": true,
+      "frameCount": 32,
+      "dimensions": [
+        96,
+        192
+      ],
+      "paletteColors": 26,
+      "bytes": 5913,
+      "sha256": "49c79fc148b218e0a0b5c1a1c3abd096150c787fde013e1125d25a119ccdd324",
+      "animations": [
+        {
+          "name": "idle",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "walk",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "cough",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "hurt",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "attack_1",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "attack_2",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "attack_3",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "block",
+          "frames": 4,
+          "unique": 4
+        }
+      ],
+      "boxes": {
+        "idle_0": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 196
+        },
+        "idle_1": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 194
+        },
+        "idle_2": {
+          "x": 6,
+          "y": 3,
+          "w": 13,
+          "h": 20,
+          "opaque": 191
+        },
+        "idle_3": {
+          "x": 5,
+          "y": 4,
+          "w": 14,
+          "h": 19,
+          "opaque": 190
+        },
+        "walk_0": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 191
+        },
+        "walk_1": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 178
+        },
+        "walk_2": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 190
+        },
+        "walk_3": {
+          "x": 6,
+          "y": 3,
+          "w": 13,
+          "h": 20,
+          "opaque": 182
+        },
+        "cough_0": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 196
+        },
+        "cough_1": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 186
+        },
+        "cough_2": {
+          "x": 5,
+          "y": 5,
+          "w": 14,
+          "h": 18,
+          "opaque": 172
+        },
+        "cough_3": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 182
+        },
+        "hurt_0": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 196
+        },
+        "hurt_1": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 188
+        },
+        "hurt_2": {
+          "x": 5,
+          "y": 4,
+          "w": 14,
+          "h": 19,
+          "opaque": 175
+        },
+        "hurt_3": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 195
+        },
+        "attack_1_0": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 189
+        },
+        "attack_1_1": {
+          "x": 3,
+          "y": 3,
+          "w": 20,
+          "h": 20,
+          "opaque": 194
+        },
+        "attack_1_2": {
+          "x": 5,
+          "y": 3,
+          "w": 17,
+          "h": 20,
+          "opaque": 192
+        },
+        "attack_1_3": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 192
+        },
+        "attack_2_0": {
+          "x": 5,
+          "y": 3,
+          "w": 13,
+          "h": 20,
+          "opaque": 186
+        },
+        "attack_2_1": {
+          "x": 4,
+          "y": 4,
+          "w": 14,
+          "h": 19,
+          "opaque": 184
+        },
+        "attack_2_2": {
+          "x": 5,
+          "y": 5,
+          "w": 14,
+          "h": 18,
+          "opaque": 187
+        },
+        "attack_2_3": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 193
+        },
+        "attack_3_0": {
+          "x": 6,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 193
+        },
+        "attack_3_1": {
+          "x": 4,
+          "y": 4,
+          "w": 17,
+          "h": 19,
+          "opaque": 189
+        },
+        "attack_3_2": {
+          "x": 4,
+          "y": 5,
+          "w": 15,
+          "h": 18,
+          "opaque": 178
+        },
+        "attack_3_3": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 195
+        },
+        "block_0": {
+          "x": 5,
+          "y": 4,
+          "w": 14,
+          "h": 19,
+          "opaque": 190
+        },
+        "block_1": {
+          "x": 5,
+          "y": 6,
+          "w": 14,
+          "h": 17,
+          "opaque": 172
+        },
+        "block_2": {
+          "x": 5,
+          "y": 7,
+          "w": 14,
+          "h": 16,
+          "opaque": 168
+        },
+        "block_3": {
+          "x": 5,
+          "y": 3,
+          "w": 14,
+          "h": 20,
+          "opaque": 195
+        }
+      }
+    },
+    {
+      "id": "dog_puppy",
+      "pass": true,
+      "frameCount": 16,
+      "dimensions": [
+        48,
+        48
+      ],
+      "paletteColors": 23,
+      "bytes": 964,
+      "sha256": "84e9efb98e0b72ec5ec79a812da3b6f0b4be807aea398858aa94fb090c49e4b5",
+      "animations": [
+        {
+          "name": "idle",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "run",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "pounce",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "bark",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "bite",
+          "frames": 2,
+          "unique": 2
+        }
+      ],
+      "boxes": {
+        "idle_0": {
+          "x": 2,
+          "y": 4,
+          "w": 9,
+          "h": 7,
+          "opaque": 40
+        },
+        "idle_1": {
+          "x": 2,
+          "y": 4,
+          "w": 9,
+          "h": 7,
+          "opaque": 42
+        },
+        "idle_2": {
+          "x": 1,
+          "y": 4,
+          "w": 10,
+          "h": 7,
+          "opaque": 43
+        },
+        "idle_3": {
+          "x": 2,
+          "y": 4,
+          "w": 9,
+          "h": 7,
+          "opaque": 41
+        },
+        "run_0": {
+          "x": 1,
+          "y": 4,
+          "w": 10,
+          "h": 7,
+          "opaque": 41
+        },
+        "run_1": {
+          "x": 2,
+          "y": 4,
+          "w": 9,
+          "h": 7,
+          "opaque": 38
+        },
+        "run_2": {
+          "x": 1,
+          "y": 4,
+          "w": 10,
+          "h": 7,
+          "opaque": 42
+        },
+        "run_3": {
+          "x": 1,
+          "y": 4,
+          "w": 10,
+          "h": 7,
+          "opaque": 42
+        },
+        "pounce_0": {
+          "x": 1,
+          "y": 5,
+          "w": 10,
+          "h": 6,
+          "opaque": 41
+        },
+        "pounce_1": {
+          "x": 1,
+          "y": 4,
+          "w": 10,
+          "h": 7,
+          "opaque": 42
+        },
+        "pounce_2": {
+          "x": 1,
+          "y": 4,
+          "w": 10,
+          "h": 7,
+          "opaque": 43
+        },
+        "pounce_3": {
+          "x": 1,
+          "y": 4,
+          "w": 10,
+          "h": 7,
+          "opaque": 40
+        },
+        "bark_0": {
+          "x": 1,
+          "y": 3,
+          "w": 10,
+          "h": 8,
+          "opaque": 47
+        },
+        "bark_1": {
+          "x": 1,
+          "y": 3,
+          "w": 9,
+          "h": 8,
+          "opaque": 45
+        },
+        "bark_2": {
+          "x": 1,
+          "y": 3,
+          "w": 9,
+          "h": 8,
+          "opaque": 44
+        },
+        "bark_3": {
+          "x": 1,
+          "y": 4,
+          "w": 10,
+          "h": 7,
+          "opaque": 44
+        }
+      }
+    },
+    {
+      "id": "dog_adult",
+      "pass": true,
+      "frameCount": 16,
+      "dimensions": [
+        80,
+        64
+      ],
+      "paletteColors": 25,
+      "bytes": 1995,
+      "sha256": "b4a5647d04bc6f0f7bfc4641384606bb316bcacaf3583bfb2c80c997490e9345",
+      "animations": [
+        {
+          "name": "idle",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "run",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "pounce",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "bark",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "bite",
+          "frames": 2,
+          "unique": 2
+        }
+      ],
+      "boxes": {
+        "idle_0": {
+          "x": 3,
+          "y": 3,
+          "w": 14,
+          "h": 12,
+          "opaque": 103
+        },
+        "idle_1": {
+          "x": 3,
+          "y": 3,
+          "w": 14,
+          "h": 12,
+          "opaque": 108
+        },
+        "idle_2": {
+          "x": 3,
+          "y": 2,
+          "w": 14,
+          "h": 13,
+          "opaque": 109
+        },
+        "idle_3": {
+          "x": 3,
+          "y": 3,
+          "w": 14,
+          "h": 12,
+          "opaque": 106
+        },
+        "run_0": {
+          "x": 1,
+          "y": 5,
+          "w": 17,
+          "h": 10,
+          "opaque": 95
+        },
+        "run_1": {
+          "x": 3,
+          "y": 5,
+          "w": 15,
+          "h": 10,
+          "opaque": 91
+        },
+        "run_2": {
+          "x": 3,
+          "y": 4,
+          "w": 15,
+          "h": 11,
+          "opaque": 91
+        },
+        "run_3": {
+          "x": 1,
+          "y": 5,
+          "w": 17,
+          "h": 10,
+          "opaque": 94
+        },
+        "pounce_0": {
+          "x": 2,
+          "y": 5,
+          "w": 15,
+          "h": 10,
+          "opaque": 102
+        },
+        "pounce_1": {
+          "x": 1,
+          "y": 5,
+          "w": 17,
+          "h": 10,
+          "opaque": 89
+        },
+        "pounce_2": {
+          "x": 1,
+          "y": 5,
+          "w": 17,
+          "h": 10,
+          "opaque": 94
+        },
+        "pounce_3": {
+          "x": 1,
+          "y": 6,
+          "w": 17,
+          "h": 9,
+          "opaque": 98
+        },
+        "bark_0": {
+          "x": 3,
+          "y": 3,
+          "w": 14,
+          "h": 12,
+          "opaque": 104
+        },
+        "bark_1": {
+          "x": 3,
+          "y": 3,
+          "w": 14,
+          "h": 12,
+          "opaque": 108
+        },
+        "bark_2": {
+          "x": 3,
+          "y": 2,
+          "w": 13,
+          "h": 13,
+          "opaque": 106
+        },
+        "bark_3": {
+          "x": 3,
+          "y": 3,
+          "w": 14,
+          "h": 12,
+          "opaque": 106
+        }
+      }
+    },
+    {
+      "id": "dog_elder",
+      "pass": true,
+      "frameCount": 16,
+      "dimensions": [
+        80,
+        64
+      ],
+      "paletteColors": 25,
+      "bytes": 2023,
+      "sha256": "1265378f599b83071bf9d4f0e2b621dfacff7491c01514ba88be782bef673def",
+      "animations": [
+        {
+          "name": "idle",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "walk",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "pounce",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "bark",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "bite",
+          "frames": 2,
+          "unique": 2
+        }
+      ],
+      "boxes": {
+        "idle_0": {
+          "x": 2,
+          "y": 4,
+          "w": 16,
+          "h": 11,
+          "opaque": 108
+        },
+        "idle_1": {
+          "x": 2,
+          "y": 3,
+          "w": 16,
+          "h": 12,
+          "opaque": 110
+        },
+        "idle_2": {
+          "x": 2,
+          "y": 3,
+          "w": 15,
+          "h": 12,
+          "opaque": 111
+        },
+        "idle_3": {
+          "x": 2,
+          "y": 4,
+          "w": 16,
+          "h": 11,
+          "opaque": 108
+        },
+        "walk_0": {
+          "x": 2,
+          "y": 4,
+          "w": 16,
+          "h": 11,
+          "opaque": 110
+        },
+        "walk_1": {
+          "x": 2,
+          "y": 3,
+          "w": 16,
+          "h": 12,
+          "opaque": 109
+        },
+        "walk_2": {
+          "x": 3,
+          "y": 3,
+          "w": 14,
+          "h": 12,
+          "opaque": 111
+        },
+        "walk_3": {
+          "x": 2,
+          "y": 4,
+          "w": 16,
+          "h": 11,
+          "opaque": 113
+        },
+        "pounce_0": {
+          "x": 2,
+          "y": 6,
+          "w": 16,
+          "h": 9,
+          "opaque": 101
+        },
+        "pounce_1": {
+          "x": 2,
+          "y": 6,
+          "w": 16,
+          "h": 9,
+          "opaque": 108
+        },
+        "pounce_2": {
+          "x": 1,
+          "y": 6,
+          "w": 17,
+          "h": 9,
+          "opaque": 110
+        },
+        "pounce_3": {
+          "x": 1,
+          "y": 6,
+          "w": 17,
+          "h": 9,
+          "opaque": 108
+        },
+        "bark_0": {
+          "x": 2,
+          "y": 4,
+          "w": 16,
+          "h": 11,
+          "opaque": 105
+        },
+        "bark_1": {
+          "x": 2,
+          "y": 3,
+          "w": 15,
+          "h": 12,
+          "opaque": 105
+        },
+        "bark_2": {
+          "x": 2,
+          "y": 3,
+          "w": 14,
+          "h": 12,
+          "opaque": 104
+        },
+        "bark_3": {
+          "x": 2,
+          "y": 3,
+          "w": 15,
+          "h": 12,
+          "opaque": 108
+        }
+      }
+    },
+    {
+      "id": "boss_teacher",
+      "pass": true,
+      "frameCount": 24,
+      "dimensions": [
+        256,
+        384
+      ],
+      "paletteColors": 37,
+      "bytes": 28402,
+      "sha256": "eeaa429d1a91b5d153d3e4e4b6ec0b24c7cd905b787d7f67b7250e81253b7b74",
+      "animations": [
+        {
+          "name": "idle",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "sweep",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "throw_chalk",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "summon",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "enraged",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "hurt",
+          "frames": 4,
+          "unique": 4
+        }
+      ],
+      "boxes": {
+        "idle_0": {
+          "x": 12,
+          "y": 8,
+          "w": 46,
+          "h": 55,
+          "opaque": 1126
+        },
+        "idle_1": {
+          "x": 13,
+          "y": 8,
+          "w": 43,
+          "h": 55,
+          "opaque": 1139
+        },
+        "idle_2": {
+          "x": 13,
+          "y": 8,
+          "w": 45,
+          "h": 55,
+          "opaque": 1260
+        },
+        "idle_3": {
+          "x": 14,
+          "y": 8,
+          "w": 44,
+          "h": 55,
+          "opaque": 1273
+        },
+        "sweep_0": {
+          "x": 7,
+          "y": 6,
+          "w": 40,
+          "h": 57,
+          "opaque": 1357
+        },
+        "sweep_1": {
+          "x": 7,
+          "y": 10,
+          "w": 47,
+          "h": 53,
+          "opaque": 1205
+        },
+        "sweep_2": {
+          "x": 6,
+          "y": 15,
+          "w": 57,
+          "h": 48,
+          "opaque": 1200
+        },
+        "sweep_3": {
+          "x": 1,
+          "y": 9,
+          "w": 58,
+          "h": 54,
+          "opaque": 1172
+        },
+        "throw_chalk_0": {
+          "x": 11,
+          "y": 8,
+          "w": 37,
+          "h": 55,
+          "opaque": 1294
+        },
+        "throw_chalk_1": {
+          "x": 11,
+          "y": 9,
+          "w": 43,
+          "h": 54,
+          "opaque": 1231
+        },
+        "throw_chalk_2": {
+          "x": 10,
+          "y": 10,
+          "w": 50,
+          "h": 53,
+          "opaque": 1281
+        },
+        "throw_chalk_3": {
+          "x": 12,
+          "y": 9,
+          "w": 47,
+          "h": 54,
+          "opaque": 1239
+        },
+        "summon_0": {
+          "x": 11,
+          "y": 8,
+          "w": 48,
+          "h": 55,
+          "opaque": 1225
+        },
+        "summon_1": {
+          "x": 12,
+          "y": 8,
+          "w": 41,
+          "h": 55,
+          "opaque": 1328
+        },
+        "summon_2": {
+          "x": 12,
+          "y": 5,
+          "w": 44,
+          "h": 58,
+          "opaque": 1439
+        },
+        "summon_3": {
+          "x": 12,
+          "y": 10,
+          "w": 39,
+          "h": 53,
+          "opaque": 1277
+        },
+        "enraged_0": {
+          "x": 4,
+          "y": 6,
+          "w": 56,
+          "h": 57,
+          "opaque": 1970
+        },
+        "enraged_1": {
+          "x": 4,
+          "y": 6,
+          "w": 55,
+          "h": 57,
+          "opaque": 1969
+        },
+        "enraged_2": {
+          "x": 4,
+          "y": 17,
+          "w": 58,
+          "h": 46,
+          "opaque": 1709
+        },
+        "enraged_3": {
+          "x": 4,
+          "y": 18,
+          "w": 56,
+          "h": 45,
+          "opaque": 1644
+        },
+        "hurt_0": {
+          "x": 11,
+          "y": 10,
+          "w": 45,
+          "h": 53,
+          "opaque": 1328
+        },
+        "hurt_1": {
+          "x": 10,
+          "y": 14,
+          "w": 37,
+          "h": 49,
+          "opaque": 1210
+        },
+        "hurt_2": {
+          "x": 9,
+          "y": 20,
+          "w": 39,
+          "h": 43,
+          "opaque": 1143
+        },
+        "hurt_3": {
+          "x": 12,
+          "y": 10,
+          "w": 47,
+          "h": 53,
+          "opaque": 1168
+        }
+      }
+    },
+    {
+      "id": "boss_employer",
+      "pass": true,
+      "frameCount": 24,
+      "dimensions": [
+        256,
+        384
+      ],
+      "paletteColors": 30,
+      "bytes": 35280,
+      "sha256": "8594420084eb31a18ed4ecc7db83f0ff56738e7437e1db2873844ce573e1615c",
+      "animations": [
+        {
+          "name": "idle",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "slam",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "smoke",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "envelopes",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "enraged",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "hurt",
+          "frames": 4,
+          "unique": 4
+        }
+      ],
+      "boxes": {
+        "idle_0": {
+          "x": 4,
+          "y": 7,
+          "w": 56,
+          "h": 56,
+          "opaque": 2109
+        },
+        "idle_1": {
+          "x": 4,
+          "y": 6,
+          "w": 56,
+          "h": 57,
+          "opaque": 2152
+        },
+        "idle_2": {
+          "x": 4,
+          "y": 6,
+          "w": 56,
+          "h": 57,
+          "opaque": 2173
+        },
+        "idle_3": {
+          "x": 4,
+          "y": 8,
+          "w": 55,
+          "h": 55,
+          "opaque": 2073
+        },
+        "slam_0": {
+          "x": 1,
+          "y": 12,
+          "w": 62,
+          "h": 51,
+          "opaque": 2160
+        },
+        "slam_1": {
+          "x": 1,
+          "y": 2,
+          "w": 59,
+          "h": 61,
+          "opaque": 2286
+        },
+        "slam_2": {
+          "x": 1,
+          "y": 18,
+          "w": 60,
+          "h": 45,
+          "opaque": 2027
+        },
+        "slam_3": {
+          "x": 4,
+          "y": 12,
+          "w": 56,
+          "h": 51,
+          "opaque": 1996
+        },
+        "smoke_0": {
+          "x": 4,
+          "y": 7,
+          "w": 56,
+          "h": 56,
+          "opaque": 2104
+        },
+        "smoke_1": {
+          "x": 4,
+          "y": 6,
+          "w": 55,
+          "h": 57,
+          "opaque": 2187
+        },
+        "smoke_2": {
+          "x": 4,
+          "y": 9,
+          "w": 53,
+          "h": 54,
+          "opaque": 2057
+        },
+        "smoke_3": {
+          "x": 4,
+          "y": 7,
+          "w": 56,
+          "h": 56,
+          "opaque": 2084
+        },
+        "envelopes_0": {
+          "x": 4,
+          "y": 7,
+          "w": 56,
+          "h": 56,
+          "opaque": 2130
+        },
+        "envelopes_1": {
+          "x": 4,
+          "y": 6,
+          "w": 57,
+          "h": 57,
+          "opaque": 2323
+        },
+        "envelopes_2": {
+          "x": 2,
+          "y": 9,
+          "w": 61,
+          "h": 54,
+          "opaque": 2160
+        },
+        "envelopes_3": {
+          "x": 4,
+          "y": 7,
+          "w": 57,
+          "h": 56,
+          "opaque": 2144
+        },
+        "enraged_0": {
+          "x": 4,
+          "y": 7,
+          "w": 56,
+          "h": 56,
+          "opaque": 2228
+        },
+        "enraged_1": {
+          "x": 3,
+          "y": 5,
+          "w": 57,
+          "h": 58,
+          "opaque": 2363
+        },
+        "enraged_2": {
+          "x": 3,
+          "y": 8,
+          "w": 57,
+          "h": 55,
+          "opaque": 2295
+        },
+        "enraged_3": {
+          "x": 4,
+          "y": 8,
+          "w": 55,
+          "h": 55,
+          "opaque": 2174
+        },
+        "hurt_0": {
+          "x": 2,
+          "y": 6,
+          "w": 58,
+          "h": 57,
+          "opaque": 2259
+        },
+        "hurt_1": {
+          "x": 3,
+          "y": 14,
+          "w": 56,
+          "h": 49,
+          "opaque": 2005
+        },
+        "hurt_2": {
+          "x": 4,
+          "y": 17,
+          "w": 53,
+          "h": 46,
+          "opaque": 1938
+        },
+        "hurt_3": {
+          "x": 4,
+          "y": 9,
+          "w": 57,
+          "h": 54,
+          "opaque": 2069
+        }
+      }
+    },
+    {
+      "id": "boss_child",
+      "pass": true,
+      "frameCount": 8,
+      "dimensions": [
+        192,
+        96
+      ],
+      "paletteColors": 26,
+      "bytes": 4321,
+      "sha256": "7ba947bf8713d387b841369e222ec5087aa91aeb56121df48da1a7060a720b84",
+      "animations": [
+        {
+          "name": "idle",
+          "frames": 4,
+          "unique": 4
+        },
+        {
+          "name": "walk",
+          "frames": 4,
+          "unique": 4
+        }
+      ],
+      "boxes": {
+        "idle_0": {
+          "x": 13,
+          "y": 1,
+          "w": 20,
+          "h": 46,
+          "opaque": 598
+        },
+        "idle_1": {
+          "x": 13,
+          "y": 1,
+          "w": 20,
+          "h": 46,
+          "opaque": 597
+        },
+        "idle_2": {
+          "x": 13,
+          "y": 1,
+          "w": 21,
+          "h": 46,
+          "opaque": 595
+        },
+        "idle_3": {
+          "x": 13,
+          "y": 1,
+          "w": 20,
+          "h": 46,
+          "opaque": 594
+        },
+        "walk_0": {
+          "x": 5,
+          "y": 2,
+          "w": 32,
+          "h": 45,
+          "opaque": 664
+        },
+        "walk_1": {
+          "x": 5,
+          "y": 2,
+          "w": 31,
+          "h": 45,
+          "opaque": 617
+        },
+        "walk_2": {
+          "x": 5,
+          "y": 2,
+          "w": 32,
+          "h": 45,
+          "opaque": 654
+        },
+        "walk_3": {
+          "x": 5,
+          "y": 2,
+          "w": 30,
+          "h": 45,
+          "opaque": 612
+        }
+      }
+    }
+  ],
+  "unverified": [
+    "Gameplay scene integration and combat timing",
+    "Independent B art approval",
+    "Team branch policy resolution"
+  ],
+  "qualityStatus": "integration-draft-v1"
+}
