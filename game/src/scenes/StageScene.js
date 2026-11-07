@@ -495,6 +495,8 @@ export default class StageScene extends Phaser.Scene {
   async _advanceStage() {
     if (this.transitioning) return;
     this.transitioning = true;
+    this.player?.setVelocity(0, 0);
+    this.physics?.world?.pause?.();
     this.events.emit('stage:complete', { phaseId: this.phaseId }); // 遥测：本关结算（issue #26）
     audio.stopBgm();
 
@@ -539,8 +541,9 @@ export default class StageScene extends Phaser.Scene {
     if (!kb) return;
     // 注意：input.keyboard 是全局插件，scene.restart() 不会自动解绑，
     // 所以这里保存函数引用，在 _teardown() 里成对 off 掉，否则每次重开都会多绑一次。
-    this._onKeyT = () => this._cyclePhase();
+    this._onKeyT = () => { if (!this.modalOpen && !this.transitioning) this._cyclePhase(); };
     this._onKeyR = () => {
+      if (this.modalOpen || this.transitioning) return;
       this._hideDeathOverlay();
       this.player?.respawn(this._activeCheckpoint());
       this.respawnPending = false;
