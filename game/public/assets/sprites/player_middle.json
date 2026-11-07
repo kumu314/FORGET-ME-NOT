@@ -799,6 +799,106 @@
         "y": 0.9583333333333334
       },
       "duration": 130
+    },
+    "throw_0": {
+      "frame": {
+        "x": 0,
+        "y": 192,
+        "w": 24,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 24
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9583333333333334
+      },
+      "duration": 60
+    },
+    "throw_1": {
+      "frame": {
+        "x": 24,
+        "y": 192,
+        "w": 24,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 24
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9583333333333334
+      },
+      "duration": 60
+    },
+    "throw_2": {
+      "frame": {
+        "x": 48,
+        "y": 192,
+        "w": 24,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 24
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9583333333333334
+      },
+      "duration": 60
+    },
+    "throw_3": {
+      "frame": {
+        "x": 72,
+        "y": 192,
+        "w": 24,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 24
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.9583333333333334
+      },
+      "duration": 60
     }
   },
   "meta": {
@@ -808,13 +908,13 @@
     "format": "RGBA8888",
     "size": {
       "w": 96,
-      "h": 192
+      "h": 216
     },
     "scale": "1"
   },
   "game": {
     "id": "player_middle",
-    "status": "integration-draft-v1",
+    "status": "ranged-draft-v1",
     "facing": "right",
     "anchor": {
       "x": 12,
@@ -900,6 +1000,16 @@
           "block_3"
         ],
         "frameRate": 7.6923076923076925,
+        "repeat": 0
+      },
+      "throw": {
+        "frames": [
+          "throw_0",
+          "throw_1",
+          "throw_2",
+          "throw_3"
+        ],
+        "frameRate": 16.666666666666668,
         "repeat": 0
       }
     }
