@@ -48,6 +48,25 @@
 3. **死亡/复活帧（P1，可后置）**：可先用黑屏淡出保底
 4. **打击特效帧（归属待定）**：格挡火花、粉笔碎裂——A/D/E 对一下归谁
 
+## Issue #19：远程补帧提案（待 C 确认）
+
+本节先约定新键，资源另走 A 功能分支。现有动画键和帧坐标全部保留。
+
+| 图集 | 新动作 / 播放键 | 帧与尺寸 | 行为 |
+|---|---|---|---|
+| player_youth | throw / player_youth:throw | throw_0..3，24×24 | 持粉笔抬臂、蓄势、出手、收势；单次 |
+| player_middle | throw / player_middle:throw | throw_0..3，24×24 | 持纸飞机侧掷；单次 |
+| player_elder | cast / player_elder:cast | cast_0..3，24×24 | 拄杖站定、空手引导记忆碎片；单次、无跳跃 |
+| projectiles | chalk / projectiles:chalk | chalk_0..3，16×16 | 粉笔头飞行，循环 |
+| projectiles | paper_plane / projectiles:paper_plane | paper_plane_0..3，16×16 | 朝右纸飞机，循环 |
+| projectiles | memory / projectiles:memory | memory_0..3，16×16 | 青蓝记忆光粒，循环 |
+
+主角原 32 帧后追加一行，总 36 帧/阶段；原图前 8 行保持字节级像素一致。弹道使用独立 projectiles 图集，中心 pivot=(0.5,0.5)，角色仍以脚底为锚点。图集文件放 game/public/assets/sprites/。
+
+角色演示动作建议 4 帧/240ms，弹道演示 4 帧/320ms；仅是预览节奏，生成弹道和耗蓝由 C 的输入/冷却逻辑负责，禁止依赖 animationcomplete 造成重复发射。空中发射暂复用同一上身动作，世界位移由物理控制；不把复用称为专用空中补帧。
+
+本提案涉及共享接线约定，待 C 确认后使用新键；未确认时继续按现有 fallback 规则运行。资源 PR 关联本提案与 #19，不提前关闭 #19。
+
 ## 变更纪律
 
 - 改动画键名 = 改契约 = 动共享约定：**先在本文件提 PR 改表，再动代码/图集**，两侧不得单方面改
