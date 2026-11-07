@@ -47,7 +47,7 @@
 
 ## 快速开始
 
-> ⚠️ 工程脚手架尚未初始化，以下为规范约定的目标命令（见《开发分工与GitHub协作规范》§1.1）
+> 脚手架由成员 C 提供（PR #7，合并后生效），以下命令**在 `game/` 目录内执行**：
 
 ```bash
 npm install
@@ -58,18 +58,20 @@ npm run build    # 产出纯静态文件
 ## 项目结构
 
 ```
-├── index.html              # Canvas 挂载根节点
-├── public/assets/          # 静态资源免编译专区
-│   ├── sprites/            # 角色/小怪/忠犬/Boss 精灵图（成员 A）
-│   ├── tilesets/           # 瓦片集 + Tiled 关卡数据 + 彩蛋物件（成员 B）
-│   └── audio/              # 8-bit 音效与 BGM（成员 E）
-└── src/
-    ├── main.js             # Phaser.Game 初始化入口
-    ├── config/             # 关卡数值与按键常量
-    ├── entities/           # Player、飞行道具（成员 C）
-    ├── ai/                 # 小怪 FSM、忠犬、Boss（成员 D）
-    ├── ui/                 # 战斗 HUD、彩蛋弹窗（成员 E）
-    └── scenes/             # Boot + 三大关卡场景（全员协作）
+├── docs/                   # 设计文档与协作规范（GDD / 分工 / 评审）
+└── game/                   # Phaser 工程（Vite 根，路径约定见分工规范 §4）
+    ├── index.html          # Canvas 挂载根节点
+    ├── public/assets/      # 静态资源免编译专区
+    │   ├── sprites/        # 角色/小怪/忠犬/Boss 精灵图（成员 A）
+    │   ├── tilesets/       # 瓦片集 + Tiled 关卡数据 + 彩蛋物件（成员 B）
+    │   └── audio/          # 8-bit 音效与 BGM（成员 E）
+    └── src/
+        ├── main.js         # Phaser.Game 初始化入口
+        ├── config/         # 关卡数值与按键常量
+        ├── entities/       # Player、飞行道具（成员 C）
+        ├── ai/             # 小怪 FSM、忠犬、Boss（成员 D）
+        ├── ui/             # 战斗 HUD、彩蛋弹窗（成员 E）
+        └── scenes/         # Boot + 三大关卡场景（全员协作）
 ```
 
 ## 团队
