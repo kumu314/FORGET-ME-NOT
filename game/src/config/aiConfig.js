@@ -202,6 +202,10 @@ export const BOSS = Object.freeze({
   teacher: {
     texture: 'boss_teacher',
     displayName: '巨影班主任',
+    lines: {
+      intro: '整栋楼就你们班最吵！还有 100 天，你们拿什么考大学？！',
+      defeat: '行了……交卷吧。你们这届，是我带过最好的一届。',
+    },
     placeholder: { w: 64, h: 64, color: 0x3b3f6b },
     hp: 420,
     body: { w: 28, h: 44 },
@@ -227,6 +231,10 @@ export const BOSS = Object.freeze({
   employer: {
     texture: 'boss_employer',
     displayName: '黄金暴君·老板',
+    lines: {
+      intro: '这个月的绩效还想不想要了？！今晚全员通宵！',
+      defeat: '暴雨……停了……今晚，不用通宵了……',
+    },
     placeholder: { w: 64, h: 64, color: 0xc9a227 },
     hp: 460,
     body: { w: 30, h: 44 },

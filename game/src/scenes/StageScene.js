@@ -381,7 +381,7 @@ export default class StageScene extends Phaser.Scene {
     // Boss 战结算：胜利标识 → 打字机转场 → 下一关
     this._onBossDefeated = ({ kind }) => {
       this.cameras.main.flash(420, 255, 240, 190);
-      this._toast(kind === 'teacher' ? '下课铃响了——交卷吧' : '暴雨停了');
+      // 结算台词由 BossBase.defeat() 的 speak() 横幅承担，这里不再重复 toast
       this._showVictoryBanner(kind);
       this.battleHud?.hideBoss();
       audio.play('victory');
