@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
 import { ensurePlaceholderTextures } from './sceneHelpers.js';
+import { preloadSpriteAtlases, registerSpriteAnimations } from './spriteAtlases.js';
 
 /**
  * 资源预加载（BootScene）
- * 成员A/B/E 的正式资源按设计文档目录放入 public/assets 后，在这里 load。
- * 当前资源尚未入库，全部走 sceneHelpers 的占位纹理，保证工程可运行。
+ * 角色、Boss、随从与弹道的首批图集统一从 manifest/atlas 加载；B/E 资源继续走占位。
  */
 export default class BootScene extends Phaser.Scene {
   constructor() {
@@ -12,12 +12,15 @@ export default class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    // 例：this.load.spritesheet('player_youth', 'assets/sprites/player_youth.png', {...})
-    // 现在不做任何网络加载，避免 404 噪音。
+    preloadSpriteAtlases(this.load);
+    this.load.on('loaderror', (file) => {
+      console.warn(`[sprites] failed to load ${file.key}: ${file.src ?? 'unknown source'}`);
+    });
   }
 
   create() {
     ensurePlaceholderTextures(this);
+    registerSpriteAnimations(this);
     this.scene.start('StageScene', { phase: 'youth' });
   }
 }

@@ -10,6 +10,7 @@ import {
   LIFECYCLE,
   MELEE_CHAIN,
   PHYSICS,
+  RANGED_COOLDOWN,
   RANGED_COST,
   STANDARD_ANSWER_BUFF,
 } from '../src/config/gameConfig.js';
@@ -29,6 +30,7 @@ import {
 } from '../src/entities/combatMath.js';
 import { computeInputState, toHeldGroups } from '../src/core/Input.js';
 import { BULLET_PROFILES } from '../src/entities/ChalkBullet.js';
+import { selectPlayerAnimation } from '../src/entities/Player.js';
 import { getStageLayout, validateElderStageIsFlat } from '../src/config/stageLayout.js';
 
 const { youth, middle, elder } = LIFECYCLE;
@@ -87,6 +89,12 @@ describe('能量系统', () => {
 
   it('远程消耗：青年15 / 中年20 / 老年10', () => {
     expect([RANGED_COST.youth, RANGED_COST.middle, RANGED_COST.elder]).toEqual([15, 20, 10]);
+  });
+
+  it('远程冷却：青年/中年 340ms，老年 260ms', () => {
+    expect([RANGED_COOLDOWN.youth, RANGED_COOLDOWN.middle, RANGED_COOLDOWN.elder]).toEqual([
+      340, 340, 260,
+    ]);
   });
 });
 
@@ -189,7 +197,37 @@ describe('近战三连击与判定', () => {
     expect(BULLET_PROFILES.youth.speed).toBeGreaterThan(0);
     expect(BULLET_PROFILES.youth.pierce).toBe(true); // 粉笔头穿刺
     expect(BULLET_PROFILES.middle.aoe).toBeGreaterThan(0); // 纸飞机 AOE
+    expect(BULLET_PROFILES.middle.atlasAnimation).toBe('paper_plane');
+    expect(BULLET_PROFILES.elder.homing).toBe(true);
     expect(BULLET_PROFILES.elder.label).toBe('金色记忆碎片');
+  });
+});
+
+describe('A 图集动画路由', () => {
+  const base = {
+    grounded: true,
+    moving: false,
+    blocking: false,
+    hurt: false,
+    coughing: false,
+    meleeStage: 0,
+    rangedAction: false,
+  };
+
+  it('按契约选择主角图集动作', () => {
+    expect(selectPlayerAnimation({ ...base, phaseId: 'youth' })).toBe('idle');
+    expect(selectPlayerAnimation({ ...base, phaseId: 'youth', moving: true })).toBe('run');
+    expect(selectPlayerAnimation({ ...base, phaseId: 'youth', grounded: false })).toBe('jump');
+    expect(selectPlayerAnimation({ ...base, phaseId: 'youth', blocking: true })).toBe('block');
+    expect(selectPlayerAnimation({ ...base, phaseId: 'youth', meleeStage: 2 })).toBe('attack_2');
+    expect(selectPlayerAnimation({ ...base, phaseId: 'youth', rangedAction: true })).toBe('throw');
+  });
+
+  it('老年使用 walk/cough/cast，绝不选择 jump', () => {
+    expect(selectPlayerAnimation({ ...base, phaseId: 'elder', moving: true })).toBe('walk');
+    expect(selectPlayerAnimation({ ...base, phaseId: 'elder', coughing: true })).toBe('cough');
+    expect(selectPlayerAnimation({ ...base, phaseId: 'elder', rangedAction: true })).toBe('cast');
+    expect(selectPlayerAnimation({ ...base, phaseId: 'elder', grounded: false })).toBe('walk');
   });
 });
 

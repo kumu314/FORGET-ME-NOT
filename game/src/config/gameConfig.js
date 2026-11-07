@@ -125,6 +125,13 @@ export const RANGED_COST = Object.freeze({
   elder: 10,
 });
 
+/** 远程冷却（毫秒）：青年/中年 340，老年 260 */
+export const RANGED_COOLDOWN = Object.freeze({
+  youth: 340,
+  middle: 340,
+  elder: 260,
+});
+
 /** 第一关【标准答案】彩蛋增益：能量上限 50→80，回能 2→4 */
 export const STANDARD_ANSWER_BUFF = Object.freeze({
   mpCap: 80,
