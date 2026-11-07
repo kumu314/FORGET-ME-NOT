@@ -1,13 +1,13 @@
 # ============================================================
 # FORGET-ME-NOT - Member B asset generator (Stage 1)
-# Generates: assets/tilesets/school_corridor.png (+ .json)
-#            assets/tilesets/easter_eggs.png     (+ .json)
-#            assets/tilesets/preview/*.png       (scene mockups, PR evidence)
+# Generates: game/public/assets/tilesets/school_corridor.png (+ .json)
+#            game/public/assets/tilesets/easter_eggs.png     (+ .json)
+#            game/public/assets/tilesets/preview/*.png       (scene mockups, PR evidence)
 # Pure ASCII on purpose (PS 5.1 parses BOM-less files as ANSI).
 # ============================================================
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot   # repo root
-$out  = Join-Path $root "assets\tilesets"
+$out  = Join-Path $root "game\public\assets\tilesets"
 $prev = Join-Path $out "preview"
 New-Item -ItemType Directory -Force -Path $out | Out-Null
 New-Item -ItemType Directory -Force -Path $prev | Out-Null

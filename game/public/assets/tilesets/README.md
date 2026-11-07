@@ -1,5 +1,7 @@
-# assets/tilesets —— 场景瓦片与彩蛋贴图（成员 B 专区）
+# game/public/assets/tilesets —— 场景瓦片与彩蛋贴图（成员 B 专区）
 
+> 仓库路径：`game/public/assets/tilesets/`（Vite 以 `game/` 为根，`public/` 内文件按根路径对外服务）。
+> 运行时加载 URL（相对 Vite 根）：`assets/tilesets/...`。
 > 交付规格：16×16 像素网格 / 透明底 PNG / TexturePacker JSON(Array) 格式切片描述。
 > Phaser 3 加载方式：`this.load.atlas('stage1', 'assets/tilesets/school_corridor.png', 'assets/tilesets/school_corridor.json')`
 
