@@ -76,7 +76,7 @@ hero.setFlipX(true); // 原图统一面向右，向左用 flipX
 
 ## 协作状态
 
-功能分支：`assets/member-A-char-core-atlases`；PR 目标为 `develop`，标题前缀 `[成员A]`。至少 1 名成员 approve 后才可 Squash 合并；A/B 互审资源规格。
+功能分支：`assets/member-A-char-core-atlases`；PR 目标为 `develop`，标题前缀 `[成员A]`。按 2026-11-07 新政策，功能 PR 无需审批；CI 绿、完成作者自查与影响面报备后，由成员 A 批量 Squash 合并。B 的美术评审仍作为质量确认，但不占审批槽。
 
 截至同步基线 `b8962bd`（C 的 PR #7），develop 已包含 Phaser 3 + Vite 脚手架、`package.json` / `package-lock.json` 与主角控制器。本批资源已位于 `game/public/assets/sprites/`，可进入主工程联调；资源加载和独立预览已完成验证，但真实关卡、碰撞与手感仍需 C/D 接入后验收。
 
