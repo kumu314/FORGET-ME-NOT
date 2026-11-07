@@ -80,9 +80,9 @@ hero.setFlipX(true); // 原图统一面向右，向左用 flipX
 
 截至同步基线，develop 只有设计与协作文档，无 package.json，不能在此基线上执行 npm run dev。本批采用独立 Phaser 3.90 加载场景 + 离线预览完成验证，不声称已通过主游戏运行验收。
 
-## 与 C 的待审 PR #5 对接
+## 与 C 的待审 PR #7 对接
 
-已只读核查 C 分支提交 `ec9a728`：
+已只读核查 C 原分支提交 `ec9a728`，并确认替代 PR #7 的 Player 与 gameConfig 内容一致。旧 PR #5 已关闭，当前接入讨论以 #7 为准：
 
 - C 把游戏工程放在 `game/`，资源预期 `game/public/assets/sprites/`；当前 develop 文档仍约定根目录 `public/assets/sprites/`。本批先遵循已合入的目录规范。若 C 的目录调整最终获批，集成时将本批 sprites 目录移动到 game/public/assets/sprites；浏览器 URL 仍是 assets/sprites，不要复制两份资源长期并存。
 - C 的 Player 已有 `phaseId`、`facing`、`isGrounded`、`isBlocking`、`coughMs`、`hurtLockMs`、`meleeStage`、`meleeAirKick`，可映射到本批动画。资源 helper 不会自动修改 Player 的动作选择逻辑。
