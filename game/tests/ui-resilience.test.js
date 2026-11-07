@@ -115,6 +115,35 @@ describe('像素字体探测与安全回退栈', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
+  // 回归：fonts.check 在字体不存在时也返回 true，
+  // 所以「有 check 且恒返回 true」不能作为像素字体可用的证据。
+  it('FontFaceSet 里没有像素字体时，不因 check 返回 true 而误判为可用', () => {
+    const other = { family: 'Arial', status: 'loaded' };
+    const fonts = [other]; // 可迭代，但里面没有像素字体
+    fonts.check = () => true; // 关键：check 撒谎
+    expect(detectPixelFont({ fonts })).toBe(false);
+  });
+
+  it('FontFaceSet 里真有像素字体时判定为可用', () => {
+    const loaded = { family: 'Zpix', status: 'loaded' };
+    const fonts = [loaded];
+    fonts.check = () => false; // check 说没有，但集合里明明有
+    expect(detectPixelFont({ fonts })).toBe(true);
+  });
+
+  it('family 名带引号 / 大小写不同也能匹配', () => {
+    const loaded = { family: '"FUSION PIXEL"', status: 'loading' };
+    const fonts = [loaded];
+    expect(detectPixelFont({ fonts })).toBe(true);
+  });
+
+  it('加载失败的 FontFace 不算可用', () => {
+    const broken = { family: 'Zpix', status: 'error' };
+    const fonts = [broken];
+    fonts.check = () => false;
+    expect(detectPixelFont({ fonts })).toBe(false);
+  });
+
   it('像素字体缺失时注入黑体优先的回退栈并告警', () => {
     const doc = makeFakeDoc();
     const warn = vi.fn();
