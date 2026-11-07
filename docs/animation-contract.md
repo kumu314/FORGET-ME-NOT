@@ -1,7 +1,7 @@
 # 动画键名契约（Animation Contract）
 
-> v0.1-draft · 2026-11-07 起草（待成员 A / C 确认后升 v1.0）
-> 数据源：`public/assets/sprites/manifest.json`（integration-draft-v1，PR #8）× `game/src/config/gameConfig.js`（PR #7）
+> v0.2-draft · 2026-11-07 起草，同日随 PR #33 更新资源状态（C 侧接入已随 #36 落地，待联调验收后升 v1.0）
+> 数据源：`game/public/assets/sprites/manifest.json`（ranged-draft-v1，PR #8 + #33，10 图集 / 224 帧 / 59 动画）× `game/src/config/gameConfig.js`（PR #7）
 > **唯一真源**：贴图帧以 manifest 的 `sha256` 为准；动画键以本文为接线约定。代码侧**禁止硬编码帧号**，一律查 manifest 的 `animationNames`。
 
 ## 通用约定
@@ -10,7 +10,7 @@
 - 采样：`nearest`（pixelArt），禁止任何平滑缩放
 - 播放查表规则：`play(key)` 前查 manifest，键不存在时 **fallback 到 `idle` 并 `console.warn`**，不许抛错断游戏
 
-## 主角三阶段（24×24，32 帧/阶段）
+## 主角三阶段（24×24，36 帧/阶段；第 5 行为远程动作，PR #33 追加）
 
 | 动画键 | 青年 | 中年 | 老年 | 说明 / 对接 C 的常量 |
 |---|:---:|:---:|:---:|---|
@@ -43,14 +43,14 @@
 
 ## 已知缺口（补齐前代码侧用占位，勿阻塞其他联调）
 
-1. **远程投掷/施法帧（P0）**：`L` 键三阶段皆无专用帧（青年投粉笔抬臂 / 中年掷纸飞机 / 老年记忆碎片施法）——已立 issue 追踪
-2. **弹道贴图（P0）**：粉笔头、纸飞机、记忆碎片光粒（8×8~16×16 即可），`ChalkBullet.js` 现用占位
+1. ~~远程投掷/施法帧（P0）~~ **资源已交付**：#33 合入 `player_youth:throw` / `player_middle:throw` / `player_elder:cast` 各 4 帧；剩余缺口是 C 侧 BootScene 注册与 Player.js 接线。
+2. ~~弹道贴图（P0）~~ **资源已交付**：#33 合入 `projectiles` 图集（chalk / paper_plane / memory 各 4 帧）；`ChalkBullet.js` 仍用占位，待 C 接入。
 3. **死亡/复活帧（P1，可后置）**：可先用黑屏淡出保底
 4. **打击特效帧（归属待定）**：格挡火花、粉笔碎裂——A/D/E 对一下归谁
 
-## Issue #19：远程补帧提案（待 C 确认）
+## Issue #19：远程补帧契约（ranged-draft-v1｜键名以 C 的 animationMappings 为准）
 
-本节先约定新键，资源另走 A 功能分支。现有动画键和帧坐标全部保留。
+本节约定新键。#28 先定键名，#33 已把资源合入 develop（manifest status=ranged-draft-v1）；原有动画键与前 8 行帧坐标全部保留。
 
 | 图集 | 新动作 / 播放键 | 帧与尺寸 | 行为 |
 |---|---|---|---|
@@ -65,7 +65,7 @@
 
 角色演示动作建议 4 帧/240ms，弹道演示 4 帧/320ms；仅是预览节奏，生成弹道和耗蓝由 C 的输入/冷却逻辑负责，禁止依赖 animationcomplete 造成重复发射。空中发射暂复用同一上身动作，世界位移由物理控制；不把复用称为专用空中补帧。
 
-本提案涉及共享接线约定，待 C 确认后使用新键；未确认时继续按现有 fallback 规则运行。资源 PR 关联本提案与 #19，不提前关闭 #19。
+本契约涉及共享接线约定：资源与键名已随 #33 落地，**键名以 C 侧实际代码为准**。C 侧接入已随 #36 落地——`BootScene.create()` 调 `registerSpriteAnimations()` 按 manifest 的 `game.animations` 逐条 `anims.create`；`game/src/scenes/spriteAtlases.js` 提供 `preloadSpriteAtlases` / `registerSpriteAnimations` / `getAnimationKey` / `hasReadyAnimation`；动作→动画名的映射由 `Player.js` 导出的 `selectPlayerAnimation()` 给出（即 #37 所称 `animationMappings`）。A 侧不另加 helper，也不改 C 的接线。D 侧 `playAnim` 遇缺键仍回退 `idle` 并 warn，属预期行为。#19 的补帧与接线均已完成（#33 交付资源、#36 完成接入），该 issue 已关闭；剩余 59 键覆盖度实机核对由成员 A 在联调阶段执行。
 
 ## 变更纪律
 
