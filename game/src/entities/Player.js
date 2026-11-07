@@ -593,7 +593,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.mp = Math.min(this.maxMp, this.mp + result.mpGain);
       }
       // 格挡成功小幅回冲，不打断姿态
-      this.invulnMs = 120;
+      this.invulnMs = COMBAT.blockInvulnMs;
     } else {
       this.hurtLockMs = PHYSICS.hurtLockMs;
       this.invulnMs = PHYSICS.invulnMs;
