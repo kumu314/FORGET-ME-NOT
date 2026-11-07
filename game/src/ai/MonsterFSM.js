@@ -77,7 +77,8 @@ export class MonsterFSM extends Phaser.Physics.Arcade.Sprite {
       if (this.def.flying) {
         this.body.setAllowGravity(false);
         this.body.setVelocity(0, 0);
-        this.baseY = this.y;
+        // 重锚到出生悬停高度（issue #63/#67：锚到当前低高度会让飞行怪永久跌落）
+        this.baseY = this.homeY;
       }
       this.clearTint();
     }
@@ -110,7 +111,9 @@ export class MonsterFSM extends Phaser.Physics.Arcade.Sprite {
       case 'CHASE':
         if (p.isDead || dist > AI.leashRange) {
           this.state = 'PATROL';
+          this.attackPhase = null;
           this.body.setVelocityX(0);
+          if (this.def.flying) this.baseY = this.homeY; // 回位重锚悬停高度（#63/#67）
           break;
         }
         if (dist <= AI.meleeRange || (this.def.attacksFromRange && dist <= AI.rangedRange)) {
@@ -121,6 +124,15 @@ export class MonsterFSM extends Phaser.Physics.Arcade.Sprite {
         break;
 
       case 'ATTACK':
+        // ATTACK 同样受 leash 约束（#67：远程怪进入攻击循环后永不离战，
+        // 追出 800px 堵在玩家脸上、悬停高度冻结都是这个洞）
+        if (p.isDead || dist > AI.leashRange) {
+          this.state = 'PATROL';
+          this.attackPhase = null;
+          this.body.setVelocityX(0);
+          if (this.def.flying) this.baseY = this.homeY;
+          break;
+        }
         this.attackTick(time, dt);
         break;
     }
