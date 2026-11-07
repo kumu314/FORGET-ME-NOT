@@ -110,20 +110,22 @@ const YOUTH_TILES = [
   { t: 'locker_br', x: 944, y: 232, w: 4, h: 1 },
 
   // ── 横梁（solid beam 568/148/128/10：8 格，黑板报正上方） ──
-  { t: 'beam', x: 568, y: 148, w: 8, h: 1 },
+  // beam 帧在 16×16 格里只占第 4~11 行（上下各有透明留白），所以贴图 y 要上移 4px，
+  // 让"看得见的木梁上沿"落在 148 == solid 上沿。否则人站上去会浮在梁上方 4px。
+  { t: 'beam', x: 568, y: 144, w: 8, h: 1 },
 
-  // ── 课桌（与 solids 对齐，桌面 tile 底边贴 solid 底边） ──
-  { t: 'desk_left', x: 260, y: 188, w: 1, h: 1 },
-  { t: 'desk_mid', x: 276, y: 188, w: 4, h: 1 },
-  { t: 'desk_right', x: 340, y: 188, w: 1, h: 1 },
-  { t: 'desk_left', x: 428, y: 156, w: 1, h: 1 },
-  { t: 'desk_mid', x: 444, y: 156, w: 3, h: 1 },
-  { t: 'desk_right', x: 492, y: 156, w: 1, h: 1 },
-  { t: 'books_stack', x: 448, y: 140, w: 1, h: 1 }, // 桌上书堆
-  { t: 'desk_left', x: 1120, y: 148, w: 1, h: 1 },
-  { t: 'desk_mid', x: 1136, y: 148, w: 3, h: 1 },
-  { t: 'desk_right', x: 1184, y: 148, w: 1, h: 1 },
-  { t: 'books_stack', x: 1152, y: 132, w: 1, h: 1 },
+  // ── 课桌（与 solids 对齐：desk_* 帧顶部有 2px 透明留白，故 y 取 solid.y - 2） ──
+  { t: 'desk_left', x: 260, y: 190, w: 1, h: 1 },
+  { t: 'desk_mid', x: 276, y: 190, w: 4, h: 1 },
+  { t: 'desk_right', x: 340, y: 190, w: 1, h: 1 },
+  { t: 'desk_left', x: 428, y: 158, w: 1, h: 1 },
+  { t: 'desk_mid', x: 444, y: 158, w: 3, h: 1 },
+  { t: 'desk_right', x: 492, y: 158, w: 1, h: 1 },
+  { t: 'books_stack', x: 448, y: 142, w: 1, h: 1 }, // 桌上书堆（随桌面一起下移 2px）
+  { t: 'desk_left', x: 1120, y: 150, w: 1, h: 1 },
+  { t: 'desk_mid', x: 1136, y: 150, w: 3, h: 1 },
+  { t: 'desk_right', x: 1184, y: 150, w: 1, h: 1 },
+  { t: 'books_stack', x: 1152, y: 134, w: 1, h: 1 },
 
   // ── 讲台（solid 520/200/64/40：顶 + 双层底） ──
   { t: 'podium_top', x: 520, y: 200, w: 4, h: 1 },
