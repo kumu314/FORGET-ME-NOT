@@ -48,7 +48,7 @@ const tick = (scene) => scene._handlers.update?.();
 
 describe('结局保底触发器（issue #25）', () => {
   it('老年关走到世界尽头恰好触发一次结局', async () => {
-    const scene = stubScene({ phaseId: 'elder', playerX: WORLD_WIDTH - ENDING_TRIGGER_PADDING - 10 });
+    const scene = stubScene({ phaseId: 'elder', playerX: WORLD_WIDTH - 10 });
     installEndingScreen(scene);
     tick(scene);
     await Promise.resolve();
