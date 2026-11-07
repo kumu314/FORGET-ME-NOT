@@ -11,6 +11,7 @@ import { MonsterTypes } from './MonsterFSM.js';
 import DogCompanion from './DogCompanion.js';
 import BossTeacher from './BossTeacher.js';
 import BossAdmin from './BossAdmin.js';
+import { getStageSpawns, spawnPointFor } from './StageSpawns.js';
 
 /** Boss 类型注册表：spawnBoss('teacher' | 'employer') */
 export const BossTypes = {
@@ -64,6 +65,8 @@ export class AIManager {
     this.monsters = [];
     this.boss = null;
     this.dog = null;
+    this.stage = null;     // 当前关卡布阵（applyStage 写入）
+    this.bossSpec = null;  // Boss 触发线，玩家推进到 triggerX 才开战
     this.bullets = new ProjectilePool(scene);
     this.seenDrops = new Set();
     this.exp = 0;
@@ -316,6 +319,8 @@ export class AIManager {
   /* ---------- 每帧驱动 ---------- */
 
   update(time, delta) {
+    this.checkStageTriggers();
+
     this.bullets.update(time, delta);
 
     for (const m of this.monsters) {
@@ -330,7 +335,116 @@ export class AIManager {
     if (this.dog && this.dog.active) this.dog.update(time, delta);
   }
 
+  /* ---------- 关卡布阵接入（把 AI 真正接进关卡） ---------- */
+
+  /**
+   * 按关卡布阵刷怪，并继承忠犬。场景 create() 里调一次。
+   * @param {'youth'|'middle'|'elder'} phaseId
+   * @returns {Array} 本次刷出的小怪
+   */
+  applyStage(phaseId) {
+    const stage = getStageSpawns(phaseId);
+    this.stage = stage;
+
+    const spawned = [];
+    for (const spec of stage.monsters) {
+      const { x, y } = spawnPointFor(spec, this.groundY);
+      const m = this.spawnMonster(spec.type, x, y);
+      if (m) spawned.push(m);
+    }
+
+    // 跨场景继承：第一关纸箱救出来后，二/三关自动换形态出场
+    this.attachDogForLevel(stage.level);
+
+    this.bossSpec = stage.boss;
+    console.info(
+      `[AI] ${phaseId} 布阵完成：小怪 ${spawned.length} 只，Boss=${stage.boss ? stage.boss.kind : '无'}`,
+    );
+    return spawned;
+  }
+
+  /** 玩家推进到 Boss 触发线才开战（每帧由 update 调用，只触发一次） */
+  checkStageTriggers() {
+    const spec = this.bossSpec;
+    if (!spec || this.boss || this.player.isDead) return;
+    if (this.player.x < spec.triggerX) return;
+
+    this.spawnBoss(spec.kind, spec.x, null, spec.arena);
+    this.scene.events.emit('ai:toast', {
+      text: `${BOSS[spec.kind].displayName} 登场！`,
+    });
+  }
+
+  /**
+   * 彩蛋联动（场景触碰彩蛋时调用）。
+   * 'puppy-box' → 写入 registry 并立刻出场，此后二/三关 attachDogForLevel 自动继承。
+   * @param {string} id stageLayout.easterEggs[].id
+   */
+  onEasterEgg(id) {
+    if (id !== 'puppy-box') return null;
+    if (this.dog && this.dog.active) return this.dog;
+
+    const level = this.stage?.level ?? 0;
+    const form = DogCompanion.formForLevel(level);
+    DogCompanion.unlock(this.scene, form);
+    const dog = this.attachDog(form);
+
+    this.scene.events.emit('ai:toast', {
+      text: '忠犬·阿黄 加入：你按 J，它会扑上去咬住敌人 1 秒',
+    });
+    return dog;
+  }
+
+  /**
+   * 玩家弹道命中结算（场景每帧对每颗子弹调一次）。
+   *
+   * 去重交给 ChalkBullet.registerHit：
+   *  - 穿刺弹（粉笔 / 记忆碎片）对同一目标只结算一次，可继续穿下一个
+   *  - 非穿刺弹（纸飞机）首次命中即 consumed，这里返回空数组后由场景销毁并结算 AOE
+   *
+   * @param {import('../entities/ChalkBullet.js').default} bullet
+   * @returns {Array} 本次命中的目标（小怪 / Boss）
+   */
+  hitByProjectile(bullet) {
+    const hits = [];
+    if (!bullet || !bullet.active || bullet.consumed) return hits;
+
+    const rect = bullet.getBounds();
+    const opts = {
+      fromProjectile: true,
+      fromX: bullet.x,
+      dir: Math.sign(bullet.facing) || 1,
+    };
+
+    for (const m of this.aliveMonsters()) {
+      if (bullet.hitTargets?.has(m)) continue;
+      if (!Phaser.Geom.Intersects.RectangleToRectangle(rect, m.getBounds())) continue;
+      const dmg = bullet.registerHit(m);
+      if (dmg > 0) {
+        m.takeDamage(dmg, opts);
+        hits.push(m);
+      }
+    }
+
+    const boss = this.activeBoss();
+    if (
+      boss
+      && !bullet.hitTargets?.has(boss)
+      && Phaser.Geom.Intersects.RectangleToRectangle(rect, boss.getBounds())
+    ) {
+      const dmg = bullet.registerHit(boss);
+      if (dmg > 0) {
+        boss.takeDamage(dmg, opts);
+        hits.push(boss);
+      }
+    }
+
+    return hits;
+  }
+
   destroy() {
+    this.bossSpec = null;
+    this.stage = null;
     this.restorePlayerHooks();
     this.scene.events.off('ai:kill', this.onKillBound, this);
     this.bullets.clearAll();

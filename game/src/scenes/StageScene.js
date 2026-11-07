@@ -5,6 +5,7 @@ import { InputController, createIdleState } from '../core/Input.js';
 import { createBackground, createHud, refreshHud, SOLID_TEXTURE } from './sceneHelpers.js';
 import Player from '../entities/Player.js';
 import ChalkBullet from '../entities/ChalkBullet.js';
+import AIManager from '../ai/AIManager.js';
 
 /**
  * 关卡场景（成员C：关卡碰撞检测与检查点复活）
@@ -21,7 +22,6 @@ const STAGE_TINT = {
   elder: 0x8a8f7a,
 };
 
-const FAKE_ENEMY_TINT = 0xb15cff;
 const PHASE_ORDER = ['youth', 'middle', 'elder'];
 
 export default class StageScene extends Phaser.Scene {
@@ -64,7 +64,7 @@ export default class StageScene extends Phaser.Scene {
     this._buildCheckpoints();
     this._buildEasterEggs();
     this._spawnPlayer();
-    this._buildTargets();
+    this._initAI();
 
     this.hud = createHud(this);
     this.cameras.main.startFollow(this.player, true, 0.2, 0.2);
@@ -138,7 +138,7 @@ export default class StageScene extends Phaser.Scene {
       phase: this.phaseId,
       onCough: () => this._flashCough(),
       onRangedFire: (shot) => this._fireBullet(shot),
-      onMeleeHit: (hit) => this._resolveMelee(hit),
+      onMeleeHit: null,
       onDamaged: (info) => this._showDamageText(info),
       onDeath: () => this._onPlayerDeath(),
     });
@@ -148,25 +148,19 @@ export default class StageScene extends Phaser.Scene {
     this.player.setDebugMeleeBox(true);
   }
 
-  /**
-   * 演示用假目标：成员D 的 MonsterFSM 接管前，用来验证近战/远程判定真的能命中。
-   * 它们不移动、不还手，只做"沙包"。
-   */
-  _buildTargets() {
-    const spots = [
-      { x: 340, y: -8, hp: 30 },
-      { x: 620, y: -60, hp: 30 },
-      { x: 980, y: -8, hp: 60 },
-    ];
-    this.targets = spots.map((p) => {
-      const t = this.add.rectangle(p.x, this._groundTop() + p.y, 14, 16, FAKE_ENEMY_TINT).setDepth(18);
-      t.hp = p.hp;
-      t.maxHp = p.hp;
-      this.physics.add.existing(t);
-      t.body.setAllowGravity(false);
-      t.body.moves = false;
-      return t;
+  /** AI 接线：刷怪 / 忠犬继承 / Boss 触发线，全部由布阵数据驱动 */
+  _initAI() {
+    this.ai = new AIManager(this, this.player, this.solids, {
+      groundY: this._groundTop(),
     });
+    this.ai.applyStage(this.phaseId);
+
+    // Boss 战结算反馈（血条由 E 的 BattleHUD 监听 ai:boss:hp / ai:boss:phase）
+    this._onBossDefeated = ({ kind }) => {
+      this.cameras.main.flash(420, 255, 240, 190);
+      this._toast(kind === 'teacher' ? '下课铃响了——交卷吧' : '暴雨停了');
+    };
+    this.events.on('ai:boss:defeated', this._onBossDefeated, this);
   }
 
   /** 当前关卡地面的顶面 y */
@@ -200,11 +194,12 @@ export default class StageScene extends Phaser.Scene {
   // 主循环
   // ==========================================================
 
-  update(_time, delta) {
+  update(time, delta) {
     const input = this.inputCtl?.update() ?? this.inputState;
     this.inputState = input;
 
     this.player.update(delta, input);
+    this.ai?.update(time, delta);
     this.player.setDebugMeleeBox(true);
 
     this._updateCheckpoints();
@@ -240,6 +235,9 @@ export default class StageScene extends Phaser.Scene {
         if (egg.id === 'standard-answer') {
           this.player.grantStandardAnswer();
           this._toast('拾取【标准答案】：能量上限 80 · 回能 4/s');
+        } else if (egg.id === 'puppy-box') {
+          // 纸箱 → 忠犬入队（写 registry，二/三关自动继承形态）
+          this.ai?.onEasterEgg('puppy-box');
         } else {
           this._toast('发现彩蛋');
         }
@@ -249,70 +247,29 @@ export default class StageScene extends Phaser.Scene {
 
   _updateBullets() {
     this.bullets = this.bullets.filter((b) => b.active);
-    for (const b of this.bullets) {
-      for (const t of this.targets) {
-        if (!t.active) continue;
-        const overlapX = Math.abs(b.x - t.x) < 12 + b.displayWidth / 2;
-        const overlapY = Math.abs(b.y - t.y) < 12;
-        if (!overlapX || !overlapY) continue;
+    if (!this.ai) return;
 
-        const dmg = b.registerHit(t);
-        if (dmg > 0) this._damageTarget(t, dmg, b.x);
-        if (!b.profile.pierce) {
-          if (b.aoeRadius > 0) this._aoe(b.x, b.y, b.aoeRadius, Math.round(b.profile.damage * 0.5));
-          b.destroy();
-          break;
+    for (const b of this.bullets) {
+      const hits = this.ai.hitByProjectile(b);
+      if (hits.length === 0) continue;
+
+      // 非穿刺弹（纸飞机）命中即爆：先结算纸屑 AOE，再销毁
+      if (!b.profile.pierce) {
+        if (b.aoeRadius > 0) {
+          this.ai.damageMonstersAt(b.x, b.y, b.aoeRadius, Math.round(b.profile.damage * 0.5), {
+            fromProjectile: true,
+          });
         }
+        b.destroy();
       }
     }
+
+    this.bullets = this.bullets.filter((b) => b.active);
   }
 
   // ==========================================================
   // 战斗结算
   // ==========================================================
-
-  _resolveMelee(hit) {
-    const box = hit.box;
-    if (!box) return;
-
-    let hitAny = false;
-    for (const t of this.targets) {
-      if (!t.active) continue;
-      const targetBox = new Phaser.Geom.Rectangle(t.x - 8, t.y - 10, 16, 20);
-      if (Phaser.Geom.Rectangle.Overlaps(box, targetBox)) {
-        hitAny = true;
-        this._damageTarget(t, hit.damage, this.player.x);
-      }
-    }
-    if (hitAny && hit.airKick) this.cameras.main.shake(60, 0.004);
-  }
-
-  _aoe(x, y, radius, damage) {
-    for (const t of this.targets) {
-      if (!t.active) continue;
-      if (Phaser.Math.Distance.Between(x, y, t.x, t.y) <= radius) {
-        this._damageTarget(t, damage, x);
-      }
-    }
-  }
-
-  _damageTarget(target, damage, fromX) {
-    target.hp -= damage;
-    const dir = Math.sign(target.x - fromX) || 1;
-    this.tweens.add({ targets: target, x: target.x + dir * 6, duration: 70, yoyo: true });
-    this._showDamageText({ damage }, '#ffd76a', target.x, target.y);
-
-    if (target.hp <= 0) {
-      this.tweens.add({
-        targets: target,
-        alpha: 0,
-        scaleX: 1.6,
-        scaleY: 1.6,
-        duration: 160,
-        onComplete: () => target.destroy(),
-      });
-    }
-  }
 
   _fireBullet(shot) {
     // 能量已在 Player 内扣除，这里只负责把子弹放进世界
@@ -396,6 +353,13 @@ export default class StageScene extends Phaser.Scene {
     }
     this._onKeyT = null;
     this._onKeyR = null;
+
+    if (this._onBossDefeated) {
+      this.events.off('ai:boss:defeated', this._onBossDefeated, this);
+      this._onBossDefeated = null;
+    }
+    this.ai?.destroy();
+    this.ai = null;
 
     this.inputCtl?.destroy();
     this.inputCtl = null;
