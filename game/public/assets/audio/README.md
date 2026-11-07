@@ -70,7 +70,7 @@
 ```js
 import { audio, SFX_FILES } from '../audio/AudioManager.js';
 
-// 页面启动后一次性加载 28 个真实音效（失败自动回退合成音）
+// 页面启动后一次性加载 32 个真实音效（核心音效失败自动回退合成音）
 const { loaded, failed } = await audio.loadSfx('assets/audio/');
 console.log(`音效 ${loaded}/${loaded + failed}`);
 
@@ -102,9 +102,40 @@ python tools/import_sfx.py
 推荐 itch.io、OpenGameArt、Freesound（注意逐条查看 License）。
 替换时保持文件名不变即可，代码无需改动。
 
-## 五、BGM 说明
+## 五、原创程序化 BGM（issue #24）
 
-- 当前 `audio.startBgm('stage1')` 是**程序合成的原创占位循环**（120 BPM），仅开发期使用；
-- 正式三关 BGM 建议：第一关 8-bit Chiptune / 第二关 Synthwave+暴雨 / 第三关 温暖单簧管；
-- 成品放入本目录后用 `audio.loadSound('bgm1', ...)` + 缓冲源 loop 替换占位循环。
+三首配乐的完整八小节 MIDI 音高表和配器在 `game/src/audio/scores.js`，由本项目于 2026-11-07 原创编写，Web Audio 实时合成；没有引用、采样或下载第三方音乐。上述本地 WAV 的授权状态与这三首原创配乐相互独立。
+
+| key / 场景 | 曲名 | 速度 / 循环时长 | 实际配器与节奏 |
+| :--- | :--- | :--- | :--- |
+| stage1 / 青年 | 操场上的纸飞机 | 144 BPM / 13.33 秒 | 方波短音主旋律、三角波四分音符低音；明亮的 C–Am–F–G 进行，密集八分音符与高八度回句 |
+| stage2 / 中年 | 雨夜末班车 | 108 BPM / 17.78 秒 | 锯齿波旋律、650Hz 低通的八分音符八度交替低音、1200Hz 低通长和弦铺底、110→40Hz 正弦底鼓；Am–F–C–G 进行，合成器夜行风格，与场景雨声叠加 |
+| stage3 / 老年 | 长椅边的黄昏 | 66 BPM / 29.09 秒 | 正弦波稀疏旋律、慢起音三角波长和弦，C–F–Am–G–C–F–G–C；没有鼓组，较长休止和释放，温暖慢板 |
+
+`startBgm('stage1' | 'stage2' | 'stage3')` 自动切歌；相同 key 不会叠加循环。25ms 定时器预排未来 120ms 的音符，起音使用 AudioContext 时钟；浏览器挂起期间不推进乐谱，恢复时不补播堆积音符。`stopBgm()` 同时停止定时器和已经预排的音源，关卡切换不会留下上一曲的长和弦。
+
+## 六、音量控件接入
+
+在 `main.js` 创建 Phaser 游戏后挂载一次，在游戏销毁时清理；控件跨关卡保留，无需修改 HUD。
+
+```js
+import { mountAudioControls } from './ui/AudioControls.js';
+
+const audioControls = mountAudioControls();
+game.events.once('destroy', () => audioControls.destroy());
+```
+
+画面右下角的「声音设置」可以展开，包含静音按钮和总音量、音乐、音效/环境三条滑杆；按钮及滑杆支持键盘，带中文可访问名称。总音量与静音作用于所有音源；音乐和音效各经独立 GainNode，正在循环的雨声也随音效滑杆改变。设置保存在 localStorage；无存储权限时仍能当场调节。浏览器首次用户手势才解锁播放。
+
+## 七、场景接线核查（基线 f0aa037）
+
+已存在：近战命中/受伤/格挡/死亡、粉笔 throw、狗 bark/bark_attack/heal、拾取、Boss 入场与预警、检查点、彩蛋、胜利及转场打字。`BGM_KEY` 已把三阶段映射到 `stage1/2/3`，直接使用新乐谱即可。
+
+仍需场景维护者补接：
+
+- `ai:boss:spawn` 现有 `audio.play('boss_enter')` 旁增加 `audio.play('bell')`，作为下课铃与 Boss 进场提示。
+- 中年关卡雨声建立处增加 Phaser `this.time.addEvent({ delay: 9000, loop: true, callback: () => audio.play('thunder', { volume: 0.35 }) })`，计时器由场景关闭自动销毁。
+- 发射远程攻击现有 `audio.play('throw')` 改成 `audio.play(this.phaseId === 'elder' ? 'magic' : 'throw')`，区分金色记忆碎片与粉笔。
+
+验证：`npm test -- --run tests/audio.test.js` 覆盖三套配器和完整循环、AudioContext 挂起/恢复、独立增益、静音恢复及持久化、预排音源停止、切歌单定时器、HTTP 加载失败和控件事件；浏览器实听与场景接线需在集成版本复核。
 
