@@ -2,8 +2,16 @@
 
 ---
 
-## 1. 团队人员代号与角色定位
+## 1. 团队人员代号、角色定位与技术栈
 
+### 1.1 核心技术栈规范 (Phaser 3 + Vite)
+团队统一采用 **【Phaser.js 3 + Vite + ES6 模块化】** 架构开发：
+* **核心框架**：`phaser` (v3.80+)
+* **构建工具**：`vite`（极速启动，支持 `npm run dev` 局域网联调与 `npm run build` 纯静态导出）
+* **物理系统**：Phaser 3 内置 Arcade Physics（轻量高效，原生重力与碰撞检测）
+* **像素渲染**：开启 `pixelArt: true`，全局禁用抗锯齿平滑，确保 16×16 点阵质感。
+
+### 1.2 人员角色与专属分支定义
 为了保证在 GitHub 协作与敏捷开发中权责分明、指代清晰，团队 5 名成员统一使用 **A、B、C、D、E** 代号分配职责，各自拥有独立专属功能分支：
 
 * **成员 A**：**美术总监 / 角色动效 (Character Artist)**
@@ -87,7 +95,58 @@ git push origin feat/member-X-xxxx
 
 ---
 
-## 4. 协作军规与防翻车红线
+## 4. 标准工程脚手架与目录树解耦 (Vite + Phaser 3)
+
+```
+game-root/
+├── index.html                     # 游戏入口与 Canvas 挂载根节点
+├── package.json                   # 依赖配置 ("phaser": "^3.80.0", "vite": "^5.0.0")
+├── vite.config.js                 # 极速构建与开发服务器配置
+├── README.md                      # 项目说明
+├── 游戏功能设计文档.md            # 游戏设计规格书
+├── 开发分工与GitHub协作规范.md     # 本分工与协作规范
+│
+├── public/                        # 【静态资源免编译专区】
+│   └── assets/
+│       ├── sprites/               # 角色/小怪/随从狗精灵图 (成员 A 提交)
+│       │   ├── player_youth.png
+│       │   ├── player_middle.png
+│       │   ├── player_elder.png
+│       │   ├── dog_companion.png
+│       │   └── boss_teacher.png
+│       ├── tilesets/              # 地图Tilemap与彩蛋 (成员 B 提交)
+│       │   ├── school_tiles.png
+│       │   ├── stage1_map.json    # Tiled导出的关卡瓦片数据
+│       │   └── easter_box.png
+│       └── audio/                 # 8-bit音效与BGM (成员 E 提交)
+│           ├── sfx_hit.wav
+│           ├── sfx_bark.wav
+│           └── bgm_stage1.mp3
+│
+└── src/                           # 【核心代码专区 - ES6模块化】
+    ├── main.js                    # Phaser.Game 配置与初始化入口
+    ├── config/                    # 关卡数值与按键常量
+    │   └── gameConfig.js
+    ├── entities/                  # 游戏实体与物理 (成员 C 专区)
+    │   ├── Player.js              # 继承 Phaser.Physics.Arcade.Sprite
+    │   └── ChalkBullet.js         # 飞行道具
+    ├── ai/                        # AI行为与状态机 (成员 D 专区)
+    │   ├── MonsterFSM.js          # 普通小怪与浮空怪AI
+    │   ├── DogCompanion.js        # 随从狗平滑跟随与扑咬协战
+    │   └── BossTeacher.js         # 第一关Boss行为树与狂暴
+    ├── ui/                        # HUD与弹窗 (成员 E 专区)
+    │   ├── BattleHUD.js           # 纯像素UI血条、能量槽、Boss血条
+    │   └── EasterEggModal.js      # 彩蛋居中慢动作特写弹窗
+    └── scenes/                    # Phaser 场景管理器 (全员协作)
+        ├── BootScene.js           # 资源预加载
+        ├── Stage1Scene.js         # 第一关·青葱岁月
+        ├── Stage2Scene.js         # 第二关·泥潭中年
+        └── Stage3Scene.js         # 第三关·暮年回响 (禁用跳跃)
+```
+
+---
+
+## 5. 协作军规与防翻车红线
 
 1. **红线一：严禁向 `main` 分支直推代码**。`main` 分支开启分支保护，只允许通过 `develop` 测试完成后一次性合并。
 2. **红线二：美术资源禁止上传超大工程源文件**。
