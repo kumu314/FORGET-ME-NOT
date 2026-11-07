@@ -33,7 +33,7 @@ export class DogCompanion extends Phaser.Physics.Arcade.Sprite {
     this.body.setSize(def.body.w, def.body.h);
     this.body.setOffset((this.width - def.body.w) / 2, this.height - def.body.h);
     this.body.setAllowGravity(false);
-    this.setDepth(4);
+    this.setDepth(16);
     this.setCollideWorldBounds(true);
 
     this.lunging = false;

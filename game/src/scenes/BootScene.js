@@ -4,7 +4,7 @@ import { preloadSpriteAtlases, registerSpriteAnimations } from './spriteAtlases.
 import { preloadMonsterSprites, registerMonsterAnimations } from './monsterSprites.js';
 
 /** 成员B 的场景瓦片图集（issue #16：第一关瓦片上墙） */
-const TILESET_ATLASES = ['school_corridor', 'school_props', 'easter_eggs'];
+const TILESET_ATLASES = ['school_corridor', 'school_props', 'easter_eggs', 'office_rain', 'office_props', 'home_autumn', 'courtyard_props'];
 
 /**
  * 资源预加载（BootScene）
