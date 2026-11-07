@@ -13,6 +13,7 @@
 import Phaser from 'phaser';
 import {
   COMBAT,
+  LEVEL_UPGRADES,
   LIFE_PHASES,
   LIFECYCLE,
   MELEE_CHAIN,
@@ -27,10 +28,11 @@ import {
 } from '../scenes/spriteAtlases.js';
 import {
   applyDamage,
-  applyLoveLetter,
   canJump,
   canStartMelee,
   canStartRanged,
+  computeGravityScale,
+  computeMeleeDamage,
   computeMoveSpeed,
   computeMpCap,
   computeMpRegen,
@@ -38,6 +40,7 @@ import {
   resolveIncomingDamage,
   resolveJumpKeyAction,
   respawnState,
+  rollCrit,
   tickMp,
   trySpendMp,
 } from './combatMath.js';
@@ -95,6 +98,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.standardAnswer = false; // 【标准答案】彩蛋 Buff
     this.loveLetter = false; // 【怦然心动】彩蛋 Buff（近战伤害 +25%，issue #16）
     this.broadcastExercise = false; // 【广播体操】被动：格挡减免 70→85%
+
+    // —— 升级强化（issue #17，GDD §3.1）——
+    this.attackLevels = 0; // 攻击力强化级数
+    this.critChance = 0; // 近战暴击率
+    this.hangLevels = 0; // 跳跃滞空强化级数（重力缩放）
 
     const maxMp = computeMpCap(this.phase, { standardAnswer: this.standardAnswer });
     this.hp = this.phase.hp;
@@ -219,6 +227,30 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   grantLoveLetter() {
     this.loveLetter = true;
     return this;
+  }
+
+  /**
+   * 应用升级强化（issue #17 三选一，由 XpSystem 调用）
+   * @param {'attack'|'crit'|'hang'} id
+   */
+  applyLevelUpgrade(id) {
+    if (id === 'attack') {
+      this.attackLevels = Math.min(LEVEL_UPGRADES.attack.maxLevels, this.attackLevels + 1);
+    } else if (id === 'crit') {
+      this.critChance = Math.min(
+        LEVEL_UPGRADES.crit.critCap,
+        this.critChance + LEVEL_UPGRADES.crit.critGain,
+      );
+    } else if (id === 'hang') {
+      this.hangLevels = Math.min(LEVEL_UPGRADES.hang.maxLevels, this.hangLevels + 1);
+      this._applyGravityScale();
+    }
+    return this;
+  }
+
+  /** 跳跃滞空强化：整段腾空重力缩放（老年禁跳不受影响，重力只作用于腾空段） */
+  _applyGravityScale() {
+    this.body?.setGravityY(PHYSICS.gravityY * computeGravityScale(this.hangLevels));
   }
 
   // ==========================================================
@@ -406,10 +438,17 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.meleeHitDone = true;
       const chain = MELEE_CHAIN[this.phaseId];
       const baseDamage = chain.damage[this.meleeStage - 1] ?? chain.damage[0];
-      const damage = applyLoveLetter(baseDamage, this.loveLetter);
+      // 伤害链：基础 ×【怦然心动】× 攻击力强化；暴击翻倍（issue #17）
+      const crit = rollCrit(this.critChance);
+      let damage = computeMeleeDamage(baseDamage, {
+        loveLetter: this.loveLetter,
+        attackLevels: this.attackLevels,
+      });
+      if (crit) damage *= LEVEL_UPGRADES.crit.critMultiplier;
       const box = this.getMeleeHitbox();
       this.eventsHooks.onMeleeHit?.({
         damage,
+        crit,
         stage: this.meleeStage,
         airKick: this.meleeAirKick,
         box,

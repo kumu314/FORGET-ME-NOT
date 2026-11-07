@@ -36,6 +36,7 @@ export class BattleHUD {
     this.player = { hp: 200, maxHp: 200, mp: 50, maxMp: 50 };
     this.stage = '';      // 左上角关卡标签，如「第一关 · 青年」
     this.boss = null;     // { name, maxHp, hp }
+    this.xp = null;       // { level, xp, next }（issue #17 经验条）
     this.popups = [];     // 飘字池
     this.flash = 0;       // 受伤红闪 0~1
     this.t = 0;
@@ -45,6 +46,7 @@ export class BattleHUD {
   setCamera(cam) { if (cam) Object.assign(this.camera, cam); }
   setPlayer(p) { if (p) Object.assign(this.player, p); }
   setStage(label) { this.stage = label; }
+  setXp(state) { if (state) Object.assign(this.xp ??= {}, state); }
 
   showBoss({ name, maxHp = 1000, hp = maxHp }) { this.boss = { name, maxHp, hp }; }
   hideBoss() { this.boss = null; }
@@ -89,6 +91,7 @@ export class BattleHUD {
     this._drawPopups(dt);
     this._drawBossBar();
     this._drawPlayerBars();
+    this._drawXpBar();
     this._drawStage();
 
     if (this.flash > 0) {
@@ -129,7 +132,13 @@ export class BattleHUD {
 
   _drawPlayerBars() {
     const { hp, maxHp, mp, maxMp } = this.player;
-    const x = 6, hpY = this.rh - 18, mpY = this.rh - 9;
+    const x = 6, xpY = this.rh - 27, hpY = this.rh - 18, mpY = this.rh - 9;
+    // 经验条（issue #17）：满级不必隐藏——它是常驻成长读数
+    if (this.xp) {
+      const { level, xp, next } = this.xp;
+      this._label(`Lv.${level}`, x, xpY - 1);
+      this._bar(x + 30, xpY, 96, 3, Math.min(xp, next), next, '#ffd75b');
+    }
     this._label('HP', x, hpY - 1);
     this._bar(x + 18, hpY, 120, 6, hp, maxHp, '#ff5b5b', { lowBlink: 0.3 });
     this._label('MP', x, mpY - 1);

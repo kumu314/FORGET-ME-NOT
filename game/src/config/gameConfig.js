@@ -147,6 +147,56 @@ export const LOVE_LETTER_BUFF = Object.freeze({
   meleeMultiplier: 1.25,
 });
 
+/**
+ * 经验系统【领悟】（issue #17，GDD §3.1）：
+ * 击杀怪物掉落感悟光球 → 靠近磁吸吸收 → 经验条满升级 → 暂停自选强化。
+ * 磁吸手感参数全部收口在这里，方便按实测调。
+ */
+export const XP_SYSTEM = Object.freeze({
+  /** 吸附半径（px）：玩家进入后光球开始磁吸 */
+  magnetRadius: 76,
+  /** 磁吸最大速度（px/s） */
+  magnetSpeed: 240,
+  /** 磁吸加速度（px/s²）：决定"吸过来"的干脆程度 */
+  magnetAccel: 1100,
+  /** 吸收距离（px）：小于该值即入账 */
+  pickupRadius: 12,
+  /** 升到 2 级所需经验（一关小怪经验约 80，中期即可首升） */
+  baseLevelExp: 40,
+  /** 每级需求倍率（L2=40, L3=54, L4=73 …） */
+  levelGrowth: 1.35,
+});
+
+/** 升级三选一强化（GDD §3.1：攻击力/暴击率/跳跃滞空） */
+export const LEVEL_UPGRADES = Object.freeze({
+  attack: Object.freeze({
+    id: 'attack',
+    label: '攻击力提升',
+    desc: '近战伤害 +25%（可叠加）',
+    /** 每级近战倍率 */
+    meleeMultiplier: 1.25,
+    maxLevels: 4,
+  }),
+  crit: Object.freeze({
+    id: 'crit',
+    label: '暴击率提升',
+    desc: '近战暴击率 +15%，暴击伤害 ×2',
+    critGain: 0.15,
+    critCap: 0.6,
+    critMultiplier: 2,
+    maxLevels: 3,
+  }),
+  hang: Object.freeze({
+    id: 'hang',
+    label: '跳跃滞空延长',
+    desc: '腾空更久、落点更远（重力 ×0.85/级）',
+    /** 每级重力缩放（乘在 PHYSICS.gravityY 上，越小越滞空） */
+    gravityScale: 0.85,
+    floor: 0.7,
+    maxLevels: 2,
+  }),
+});
+
 /** 按键映射（设计文档 §2.1，PC 键盘标准） */
 export const KEYS = Object.freeze({
   left: ['LEFT', 'A'],

@@ -8,25 +8,31 @@ vi.mock('phaser', () => ({
 import {
   COMBAT,
   LIFECYCLE,
+  LEVEL_UPGRADES,
   LOVE_LETTER_BUFF,
   MELEE_CHAIN,
   PHYSICS,
   RANGED_COOLDOWN,
   RANGED_COST,
   STANDARD_ANSWER_BUFF,
+  XP_SYSTEM,
 } from '../src/config/gameConfig.js';
 import {
   applyDamage,
   applyLoveLetter,
   canJump,
   canStartMelee,
+  computeGravityScale,
+  computeMeleeDamage,
   computeMoveSpeed,
   computeMpCap,
   computeMpRegen,
+  expToNext,
   nextComboStage,
   resolveIncomingDamage,
   resolveJumpKeyAction,
   respawnState,
+  rollCrit,
   tickMp,
   trySpendMp,
 } from '../src/entities/combatMath.js';
@@ -381,5 +387,63 @@ describe('第一关组装（issue #16）', () => {
     expect(egg).toBeTruthy();
     // 判定点与彩蛋锚点在同一位置（打碎即解锁触碰）
     expect(Math.abs(box.x - egg.x)).toBeLessThanOrEqual(8);
+  });
+});
+
+describe('经验系统【领悟】（issue #17，GDD §3.1）', () => {
+  it('磁吸参数收口在 config 且自洽：吸附半径 > 吸收距离，速度/加速度为正', () => {
+    expect(XP_SYSTEM.magnetRadius).toBeGreaterThan(XP_SYSTEM.pickupRadius);
+    expect(XP_SYSTEM.magnetSpeed).toBeGreaterThan(0);
+    expect(XP_SYSTEM.magnetAccel).toBeGreaterThan(0);
+    expect(XP_SYSTEM.levelGrowth).toBeGreaterThan(1);
+  });
+
+  it('升级需求曲线：L1→2 要 40，L2→3 要 54（40×1.35 向上取整），逐级递增', () => {
+    expect(expToNext(1)).toBe(40);
+    expect(expToNext(2)).toBe(54);
+    expect(expToNext(3)).toBe(73);
+    expect(expToNext(4)).toBeGreaterThan(expToNext(3));
+    expect(Math.ceil(XP_SYSTEM.baseLevelExp * XP_SYSTEM.levelGrowth)).toBe(expToNext(2));
+  });
+
+  it('近战伤害链：基础 × 怦然心动 × 攻击力强化（可叠加）', () => {
+    // 无任何加成
+    expect(computeMeleeDamage(10, {})).toBe(10);
+    // 单因子
+    expect(computeMeleeDamage(10, { loveLetter: true })).toBe(13);
+    expect(computeMeleeDamage(10, { attackLevels: 1 })).toBe(13);
+    expect(applyLoveLetter(10, true)).toBe(13); // 旧入口保持等价
+    expect(computeMeleeDamage(16, { attackLevels: 1 })).toBe(20);
+    // 双因子叠乘：10 × 1.25 × 1.25 = 15.625 → 16
+    expect(computeMeleeDamage(10, { loveLetter: true, attackLevels: 1 })).toBe(16);
+    // 三段连击整链（攻击力 1 级）
+    expect(MELEE_CHAIN.youth.damage.map((d) => computeMeleeDamage(d, { attackLevels: 1 }))).toEqual([
+      13, 13, 20,
+    ]);
+  });
+
+  it('暴击：概率注入随机数可测，命中翻倍由 Player 侧 ×2，上限封顶', () => {
+    expect(rollCrit(0, 0.01)).toBe(false); // 无暴击率永不暴击
+    expect(rollCrit(0.3, 0.2)).toBe(true);
+    expect(rollCrit(0.3, 0.5)).toBe(false);
+    expect(rollCrit(0.9, 0.7)).toBe(false); // 0.9 被 cap 到 0.6，0.7 不中
+    expect(LEVEL_UPGRADES.crit.critMultiplier).toBe(2);
+    expect(LEVEL_UPGRADES.crit.critGain).toBeCloseTo(0.15);
+  });
+
+  it('跳跃滞空：每级重力 ×0.85，封底 0.7；0 级恒为 1（不影响既有跳跃手感）', () => {
+    expect(computeGravityScale(0)).toBe(1);
+    expect(computeGravityScale(1)).toBeCloseTo(0.85);
+    expect(computeGravityScale(2)).toBeCloseTo(0.7225);
+    expect(computeGravityScale(5)).toBeCloseTo(LEVEL_UPGRADES.hang.floor); // 封底
+  });
+
+  it('三选一项齐全且上限自洽（GDD §3.1：攻击力/暴击率/跳跃滞空）', () => {
+    expect(Object.keys(LEVEL_UPGRADES).sort()).toEqual(['attack', 'crit', 'hang'].sort());
+    expect(LEVEL_UPGRADES.attack.maxLevels).toBeGreaterThanOrEqual(1);
+    expect(LEVEL_UPGRADES.crit.maxLevels * LEVEL_UPGRADES.crit.critGain).toBeLessThanOrEqual(
+      LEVEL_UPGRADES.crit.critCap,
+    );
+    expect(LEVEL_UPGRADES.hang.gravityScale).toBeLessThan(1);
   });
 });

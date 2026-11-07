@@ -48,6 +48,7 @@ export class BossBase extends Phaser.Physics.Arcade.Sprite {
     this.letterRainEndAt = 0;
     this.hurtUntil = 0;
     this.animOverrideUntil = 0;
+    this._introPlayed = false;
 
     const world = scene.physics.world.bounds;
     this.player = scene.ai ? scene.ai.player : scene.player;
@@ -73,6 +74,10 @@ export class BossBase extends Phaser.Physics.Arcade.Sprite {
 
   update(time, delta) {
     if (this.defeated || !this.active) return;
+    if (!this._introPlayed) {
+      this._introPlayed = true;
+      this.speak(this.cfg.lines?.intro, { shake: true });
+    }
     const dt = Math.min(delta, 40) / 1000;
     if (this.contactCd > 0) this.contactCd -= dt;
 
@@ -221,9 +226,9 @@ export class BossBase extends Phaser.Physics.Arcade.Sprite {
     this.setAnim('enraged', true);
 
     this.scene.events.emit('ai:boss:phase', { kind: this.kind, phase: 2 });
-    this.scene.events.emit('ai:toast', {
-      text: this.kind === 'teacher' ? '班主任进入狂暴：试卷羽翼展开！' : '老板进入狂暴：裁员信风暴！',
-    });
+    this.speak(
+      this.kind === 'teacher' ? '班主任进入狂暴：试卷羽翼展开！' : '老板进入狂暴：裁员信风暴！',
+    );
     if (this.onPhase2) this.onPhase2(time);
   }
 
@@ -263,6 +268,8 @@ export class BossBase extends Phaser.Physics.Arcade.Sprite {
     this.body.enable = false;
     this.clearTelegraphs();
     this.letterRainActive = false;
+    this.speak(this.cfg.lines?.defeat, { holdMs: 2400 });
+    this._paperBurst();
     this.scene.events.emit('ai:boss:defeated', { kind: this.kind });
     this.scene.tweens.add({
       targets: this,
@@ -271,6 +278,63 @@ export class BossBase extends Phaser.Physics.Arcade.Sprite {
       duration: 700,
       onComplete: () => this.destroy(),
     });
+  }
+
+  /**
+   * 台词横幅（登场/狂暴/结算通用）：自持渲染，不依赖外部事件监听者。
+   * 顺带修复：此前狂暴提示走 ai:toast 事件，但该事件无任何监听方，台词从未显示过。
+   */
+  speak(text, opts = {}) {
+    if (!text) return;
+    if (opts.shake) this.scene.cameras.main.shake(240, 0.006);
+    const banner = this.scene.add
+      .text(this.scene.scale.width / 2, 48, text, {
+        fontFamily: 'monospace',
+        fontSize: '10px',
+        color: '#ffe9b0',
+        backgroundColor: '#000000aa',
+        align: 'center',
+        wordWrap: { width: this.scene.scale.width - 36 },
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(3000);
+    this.scene.tweens.add({
+      targets: banner,
+      alpha: 0,
+      delay: opts.holdMs ?? 1900,
+      duration: 500,
+      onComplete: () => banner.destroy(),
+    });
+  }
+
+  /** 通关演出：试卷/KPI 纸屑崩解（纯矩形，遵循红线三"不做复杂动画"） */
+  _paperBurst() {
+    const palette =
+      this.kind === 'teacher'
+        ? [0xfff6e0, 0xffe9b0, 0xffffff]
+        : [0xe8e8e8, 0xd8c9a3, 0xfff2c4];
+    for (let i = 0; i < 14; i += 1) {
+      const scrap = this.scene.add
+        .rectangle(
+          this.x + Phaser.Math.Between(-26, 26),
+          this.y + Phaser.Math.Between(-32, 8),
+          Phaser.Math.Between(3, 7),
+          Phaser.Math.Between(4, 8),
+          Phaser.Utils.Array.GetRandom(palette),
+        )
+        .setDepth(6);
+      this.scene.tweens.add({
+        targets: scrap,
+        y: scrap.y + Phaser.Math.Between(36, 92),
+        x: scrap.x + Phaser.Math.Between(-32, 32),
+        angle: Phaser.Math.Between(-220, 220),
+        alpha: 0,
+        duration: Phaser.Math.Between(650, 1100),
+        ease: 'Quad.easeOut',
+        onComplete: () => scrap.destroy(),
+      });
+    }
   }
 
   touchPlayer() {

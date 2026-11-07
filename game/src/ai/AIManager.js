@@ -289,7 +289,7 @@ export class AIManager {
     return hits;
   }
 
-  /* ---------- 击杀：经验 + 被动掉落 + 感悟光球 ---------- */
+  /* ---------- 击杀：经验 + 被动掉落（感悟光球由 XpSystem 接管，issue #17） ---------- */
 
   onKill(info) {
     this.exp += info.exp || 0;
@@ -303,30 +303,8 @@ export class AIManager {
         this.scene.events.emit('ai:toast', { text: `获得被动【${def.drop.name}】` });
       }
     }
-
-    this.spawnOrb(info.x, info.y);
-  }
-
-  spawnOrb(x, y) {
-    if (!this.scene.textures.exists('ai_orb')) return;
-    const orb = this.scene.add.image(x, y, 'ai_orb').setDepth(6);
-    this.scene.tweens.add({
-      targets: orb,
-      y: y - 16,
-      duration: 260,
-      yoyo: true,
-      repeat: 1,
-      onComplete: () => {
-        if (!orb.active) return;
-        this.scene.tweens.add({
-          targets: orb,
-          x: this.player.x,
-          y: this.player.y,
-          duration: 420,
-          onComplete: () => orb.destroy(),
-        });
-      },
-    });
+    // 经验光球：ai:kill 事件自带 exp 载荷，场景侧 XpSystem 据此掉落可磁吸的真实光球。
+    // 本类原装饰性 spawnOrb（纯视觉、无经验值）已退役删除。
   }
 
   /* ---------- 每帧驱动 ---------- */
