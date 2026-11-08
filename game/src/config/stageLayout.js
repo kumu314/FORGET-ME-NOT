@@ -257,13 +257,15 @@ export const STAGE_LAYOUTS = Object.freeze({
     ],
     /** 彩蛋锚点（StageScene 负责贴图与弹窗；letter 由 breakables 打碎后生成） */
     easterEggs: [
-      { id: 'puppy-box', x: 900, y: GROUND_Y, type: 'companion' },
+      // puppy-box x866：原 x900 落在储物柜 solid（880-1000）体内，合法玩法摸不到触碰圈
+      // （触碰判定 |dy|<40，柜顶站立恰好 =40 不满足）。移到柜旁空地，GDD「储物柜旁」语义不变。
+      { id: 'puppy-box', x: 866, y: GROUND_Y, type: 'companion' },
       { id: 'standard-answer', x: 660, y: 148, type: 'buff' },
     ],
     /** 可打碎物（近战命中 → StageScene 换帧散纸并掉落彩蛋） */
     breakables: [
       { id: 'letter-pile', x: 308, y: 222, kind: 'paper-pile' }, // 桌洞纸堆 → 手写情书
-      { id: 'puppy-box', x: 900, y: 232, kind: 'box' }, // 纸箱封条 → 打开后可触碰触发忠犬
+      { id: 'puppy-box', x: 866, y: 232, kind: 'box' }, // 纸箱封条 → 打开后可触碰触发忠犬
     ],
     /** 彩蛋解谜浮空借力怪（飞踢命中 → AI.airKickBounce 借力弹跳上横梁） */
     eggHelpers: [{ type: 'sleepBug', x: 555, y: 112, respawnMs: 2500, forEgg: 'standard-answer' }],
@@ -297,7 +299,8 @@ export const STAGE_LAYOUTS = Object.freeze({
       { x: 684, y: 208, w: 32, h: 32, kind: 'printer' },
     ],
     easterEggs: [
-      { id: 'thermos', x: 842, y: GROUND_Y, type: 'buff' },
+      // thermos x600：原 x842 落在打印机 solid（760-940）体内，合法玩法摸不到（#82 同类）
+      { id: 'thermos', x: 600, y: GROUND_Y, type: 'buff' },
       { id: 'wedding-ring', x: 1080, y: GROUND_Y, type: 'story' },
     ],
     tiles: MIDDLE_TILES,
