@@ -42,9 +42,12 @@ describe('original procedural SFX delivery', () => {
     expect(manifest.generatedBy).toBe('tools/generate_original_sfx.py');
     expect(manifest.generatorSha256).toBe(hash(generator));
     expect(manifest.license).toBe('MIT');
+    // LICENSE 没有 .gitattributes 的 eol 约束，Windows 检出（core.autocrlf=true）会把它变成 CRLF，
+    // 与上面生成器哈希的处理保持一致：先归一换行再比对，避免把"换行风格"当成"内容漂移"。
+    const normalize = (bytes) => bytes.toString('utf8').replace(/\r\n/g, '\n');
     const license = readFileSync(new URL(manifest.licenseFile, base));
-    expect(hash(license)).toBe(manifest.licenseSha256);
-    expect(license).toEqual(readFileSync(new URL('../../LICENSE', import.meta.url)));
+    expect(hash(normalize(license))).toBe(manifest.licenseSha256);
+    expect(normalize(license)).toBe(normalize(readFileSync(new URL('../../LICENSE', import.meta.url))));
     for (const entry of manifest.files) {
       expect(entry.source).toBe(`procedural:tools/generate_original_sfx.py#${entry.key}`);
       expect(entry.seed).toMatch(/^[0-9a-f]{16}$/);
