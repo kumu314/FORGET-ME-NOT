@@ -203,7 +203,8 @@ export const LEVEL_UPGRADES = Object.freeze({
 export const KEYS = Object.freeze({
   left: ['LEFT', 'A'],
   right: ['RIGHT', 'D'],
-  jump: ['SPACE'],
+  // 跳跃：W 为主键（2026-11-08 调整），保留 SPACE 兼容 GDD §2.1 与旧手感
+  jump: ['SPACE', 'W'],
   block: ['DOWN', 'S'],
   melee: ['J'],
   ranged: ['L'],

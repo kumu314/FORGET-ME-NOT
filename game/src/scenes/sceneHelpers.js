@@ -148,7 +148,7 @@ export function createHud(scene) {
     phaseText: scene.add.text(96, 6, '', style).setScrollFactor(0).setDepth(1001),
     hintBg,
     hintText: scene.add
-      .text(6, GAME_HEIGHT - 12, 'A/D移动  Space跳跃  S格挡  J近战  L远程  T切换年龄  R复活', {
+      .text(6, GAME_HEIGHT - 12, 'A/D移动  W/Space跳跃  S格挡  J近战  L远程  T切换年龄  R复活', {
         ...style,
         fontSize: '8px',
         color: '#cfd6e0',
