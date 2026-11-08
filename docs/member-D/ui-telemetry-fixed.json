@@ -1,0 +1,145 @@
+{
+  "workingTree": "D:/CodexOutputs/黑客松/UNTIL-THE-END-quality",
+  "sourceHead": "c5764dfd6a25ba6d5d6989e7fd9c74a4aa260313",
+  "sourceDirty": true,
+  "checkedAt": "2026-11-07T23:59:49.320Z",
+  "method": "Actual source served by Vite; real Phaser and Edge; controlled state setup is disclosed per case; no source or runtime modules mocked",
+  "checks": [
+    {
+      "name": "initial stage installs telemetry",
+      "pass": true,
+      "evidence": {
+        "phase": "youth",
+        "startedAt": "2026-11-07T23:59:53.768Z"
+      }
+    },
+    {
+      "name": "held-key repeat is not counted as a new physical press",
+      "pass": true,
+      "evidence": {
+        "physicalDownSequences": 1,
+        "generatedKeydowns": 2,
+        "secondKeydownRepeat": true,
+        "recordedPresses": 1
+      }
+    },
+    {
+      "name": "releasing movement inside audio controls clears the game key",
+      "pass": true,
+      "evidence": {
+        "activeElement": "INPUT",
+        "keyIsDown": false,
+        "right": false,
+        "velocityX": 0
+      }
+    },
+    {
+      "name": "clicking canvas releases audio-panel focus and restores game keys",
+      "pass": true,
+      "evidence": {
+        "activeElement": "BODY",
+        "keyIsDown": true,
+        "right": true,
+        "velocityX": 95
+      }
+    },
+    {
+      "name": "Phaser blur handling resets the key independently of InputController.flush",
+      "pass": true,
+      "evidence": {
+        "setup": "Dispatch browser blur through the real window and Phaser listeners; no keyboard objects mocked",
+        "afterFlush": {
+          "stateRight": false,
+          "keyIsDown": false
+        },
+        "afterWindowBlur": {
+          "keyIsDown": false,
+          "right": false
+        }
+      }
+    },
+    {
+      "name": "upgrade opens before same-frame egg pickup",
+      "pass": true,
+      "evidence": {
+        "eggOpen": false,
+        "levelOpen": true,
+        "modalOpen": true,
+        "physicsPaused": true
+      }
+    },
+    {
+      "name": "active upgrade remains paused after an egg close attempt",
+      "pass": true,
+      "evidence": {
+        "setup": "Arrange a pending upgrade while player is at an untaken answer egg; run the actual StageScene.update once",
+        "before": {
+          "eggOpen": false,
+          "levelOpen": true,
+          "modalOpen": true,
+          "physicsPaused": true
+        },
+        "overlap": {
+          "eggOpen": true,
+          "levelOpen": true
+        },
+        "after": {
+          "eggOpen": false,
+          "levelOpen": true,
+          "modalOpen": true,
+          "physicsPaused": true
+        }
+      }
+    },
+    {
+      "name": "transition click requests documented skip",
+      "pass": true,
+      "evidence": {
+        "busy": true,
+        "fast": true,
+        "overlayPresent": true
+      }
+    },
+    {
+      "name": "finalized telemetry export elapsed seconds remains frozen",
+      "pass": true,
+      "evidence": {
+        "beforeElapsedMs": 906,
+        "afterElapsedMs": 906,
+        "beforeElapsedSec": 0.9,
+        "afterElapsedSec": 0.9
+      }
+    },
+    {
+      "name": "scene restart creates telemetry for the new phase and attaches listeners",
+      "pass": true,
+      "evidence": {
+        "scenePhase": "middle",
+        "telemetryPhase": "middle",
+        "startedAt": "2026-11-07T23:59:57.539Z",
+        "guard": true,
+        "damageListeners": 2,
+        "previousDamage": 0,
+        "currentDamage": 7
+      }
+    },
+    {
+      "name": "one downloaded bundle includes previous and current stage snapshots",
+      "pass": true,
+      "evidence": {
+        "phases": [
+          "youth",
+          "middle"
+        ],
+        "warnings": [],
+        "exportPath": "D:\\CodexOutputs\\黑客松\\reports\\quality-20261108\\playtest-export-probe.json"
+      }
+    },
+    {
+      "name": "no browser page errors",
+      "pass": true,
+      "evidence": []
+    }
+  ],
+  "pageErrors": []
+}
