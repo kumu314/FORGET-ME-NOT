@@ -224,16 +224,17 @@ it('mounts operable labeled controls once at application level and removes them'
     addEventListener: vi.fn((name, handler) => { documentListeners[name] = handler; }),
     removeEventListener: vi.fn(),
     createElement: (tag) => {
-    const element = {
-      tag, style: {}, children: [], handlers: {}, setAttribute: vi.fn(), remove: vi.fn(),
-      append(...children) { this.children.push(...children); },
-      appendChild(child) { this.children.push(child); },
-      addEventListener(name, handler) { this.handlers[name] = handler; },
-      contains(node) { return node === this || this.children.some((child) => child.contains(node)); },
-    };
-    elements.push(element);
-    return element;
-  } });
+      const element = {
+        tag, style: {}, children: [], handlers: {}, setAttribute: vi.fn(), remove: vi.fn(),
+        append(...children) { this.children.push(...children); },
+        appendChild(child) { this.children.push(child); },
+        addEventListener(name, handler) { this.handlers[name] = handler; },
+        contains(node) { return node === this || this.children.some((child) => child.contains(node)); },
+      };
+      elements.push(element);
+      return element;
+    },
+  });
   const parent = { appendChild: vi.fn() };
   const uiManager = {
     volume: 0.7, musicVolume: 0.6, effectsVolume: 0.8, muted: false,
@@ -249,17 +250,19 @@ it('mounts operable labeled controls once at application level and removes them'
   expect(uiManager.setMusicVolume).toHaveBeenCalledWith(0.25);
   elements.find((element) => element.tag === 'button').handlers.click();
   expect(uiManager.muted).toBe(true);
-  const summary = elements.find((element) => element.tag === 'summary');
-  summary.blur = vi.fn();
-  document.activeElement = summary;
-  documentListeners.pointerdown({ target: summary });
-  expect(summary.blur).not.toHaveBeenCalled();
+  // #76 适配（结构换成折叠图标后的等价验证）：
+  // 点击声音控件外部 → 释放其内部控件的键盘焦点；点控件内部不释放；外部焦点不误伤
+  const panelInput = sliders[0];
+  panelInput.blur = vi.fn();
+  document.activeElement = panelInput;
+  documentListeners.pointerdown({ target: panelInput });
+  expect(panelInput.blur).not.toHaveBeenCalled();
   documentListeners.pointerdown({ target: {} });
-  expect(summary.blur).toHaveBeenCalledOnce();
-  const otherInput = { blur: vi.fn() };
-  document.activeElement = otherInput;
+  expect(panelInput.blur).toHaveBeenCalledOnce();
+  const outside = { blur: vi.fn() };
+  document.activeElement = outside;
   documentListeners.pointerdown({ target: {} });
-  expect(otherInput.blur).not.toHaveBeenCalled();
+  expect(outside.blur).not.toHaveBeenCalled();
   controls.destroy();
   expect(document.removeEventListener).toHaveBeenCalledWith('pointerdown', documentListeners.pointerdown, true);
   expect(controls.element.remove).toHaveBeenCalledOnce();
