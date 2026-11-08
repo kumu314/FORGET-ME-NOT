@@ -8,6 +8,7 @@ import {
 } from '../config/aiConfig.js';
 import { ProjectilePool } from './AIProjectiles.js';
 import { MonsterTypes } from './MonsterFSM.js';
+import { separateAll } from './separation.js';
 import DogCompanion from './DogCompanion.js';
 import BossTeacher from './BossTeacher.js';
 import BossAdmin from './BossAdmin.js';
@@ -329,6 +330,9 @@ export class AIManager {
     if (this.monsters.some((m) => m.destroyed)) {
       this.monsters = this.monsters.filter((m) => !m.destroyed);
     }
+
+    // 怪间分离（issue #88）：防止两只追击怪重叠堆叠，被误读为"击杀后原地复活"
+    if (separateAll(this.monsters)) this.monsters = this.monsters.filter((m) => !m.destroyed);
 
     const boss = this.activeBoss();
     if (boss) boss.update(time, delta);
