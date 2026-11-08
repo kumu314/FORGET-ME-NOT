@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { playVideo } from '../ui/VideoOverlay.js';
 
 const PHOTO_KEY = 'ending_group_photo';
 const FONT = 'monospace';
@@ -16,9 +17,13 @@ export default class EndingScene extends Phaser.Scene {
     }
   }
 
-  create() {
+  async create() {
     this.leaving = false;
     this.cameras.main.setBackgroundColor('#171c26');
+
+    // 结局视频：先看完（或跳过）再露出片尾合照；视频缺失/失败时直接继续，不阻塞流程。
+    await playVideo('assets/video/ending.mp4', { skipAfterMs: 2500 });
+
     const text = (x, y, value, size = 10, color = '#eee0c5') => this.add.text(x, y, value, {
       fontFamily: FONT, fontSize: `${size}px`, color,
     });
