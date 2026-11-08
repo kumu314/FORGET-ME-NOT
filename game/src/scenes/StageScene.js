@@ -12,6 +12,7 @@ import { mountBattleHud } from '../ui/HudOverlay.js';
 import { EasterEggModal, EGG_PRESETS } from '../ui/EasterEggModal.js';
 import { TypewriterTransition, TRANSITION_PRESETS } from '../ui/TypewriterTransition.js';
 import { installEndingScreen } from '../ui/EndingScreen.js';
+import { installHelpOverlay } from '../ui/HelpOverlay.js';
 import { ELDER_CHILD, canHugChild } from '../config/elderEnding.js';
 import { installStagePassives, tickPassiveRecovery } from '../entities/stagePassives.js';
 import { installTelemetry } from '../telemetry/PlaytestTelemetry.js';
@@ -132,6 +133,7 @@ export default class StageScene extends Phaser.Scene {
     this.hud = createHud(this);
     this._initUiModules();
     installEndingScreen(this);
+    installHelpOverlay(this); // Tab 操作说明：打开时暂停世界，关掉自动恢复
     installTelemetry(this); // 试玩遥测（issue #26）：用时/死亡/承伤/按键，__fmnTelemetry.download() 导出
     installPhysicsDiagnostics(this);
     installJuice(this); // 打击感机制层（issue #26）：命中顿帧 + 三档屏震
