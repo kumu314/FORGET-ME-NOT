@@ -219,12 +219,17 @@ describe('original three-stage scores and scheduling', () => {
 
 it('mounts operable labeled controls once at application level and removes them', () => {
   const elements = [];
-  vi.stubGlobal('document', { createElement: (tag) => {
+  const documentListeners = {};
+  vi.stubGlobal('document', {
+    addEventListener: vi.fn((name, handler) => { documentListeners[name] = handler; }),
+    removeEventListener: vi.fn(),
+    createElement: (tag) => {
     const element = {
       tag, style: {}, children: [], handlers: {}, setAttribute: vi.fn(), remove: vi.fn(),
       append(...children) { this.children.push(...children); },
       appendChild(child) { this.children.push(child); },
       addEventListener(name, handler) { this.handlers[name] = handler; },
+      contains(node) { return node === this || this.children.some((child) => child.contains(node)); },
     };
     elements.push(element);
     return element;
@@ -244,6 +249,18 @@ it('mounts operable labeled controls once at application level and removes them'
   expect(uiManager.setMusicVolume).toHaveBeenCalledWith(0.25);
   elements.find((element) => element.tag === 'button').handlers.click();
   expect(uiManager.muted).toBe(true);
+  const summary = elements.find((element) => element.tag === 'summary');
+  summary.blur = vi.fn();
+  document.activeElement = summary;
+  documentListeners.pointerdown({ target: summary });
+  expect(summary.blur).not.toHaveBeenCalled();
+  documentListeners.pointerdown({ target: {} });
+  expect(summary.blur).toHaveBeenCalledOnce();
+  const otherInput = { blur: vi.fn() };
+  document.activeElement = otherInput;
+  documentListeners.pointerdown({ target: {} });
+  expect(otherInput.blur).not.toHaveBeenCalled();
   controls.destroy();
+  expect(document.removeEventListener).toHaveBeenCalledWith('pointerdown', documentListeners.pointerdown, true);
   expect(controls.element.remove).toHaveBeenCalledOnce();
 });

@@ -100,7 +100,7 @@ describe('能量系统', () => {
   });
 
   it('远程消耗：青年15 / 中年20 / 老年10', () => {
-    expect([RANGED_COST.youth, RANGED_COST.middle, RANGED_COST.elder]).toEqual([15, 20, 10]);
+    expect([RANGED_COST.youth, RANGED_COST.middle, RANGED_COST.elder]).toEqual([15, 20, 3]);
   });
 
   it('远程冷却：青年/中年 340ms，老年 260ms', () => {

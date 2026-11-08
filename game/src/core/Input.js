@@ -9,6 +9,10 @@
 
 import { KEYS } from '../config/gameConfig.js';
 
+export function isUiInputTarget(target) {
+  return Boolean(target?.closest?.('input, textarea, select, button, [contenteditable="true"], #audio-controls'));
+}
+
 /** 一次输入采样：布尔量描述"此刻的意图" */
 export function createIdleState() {
   return {
@@ -105,10 +109,21 @@ export class InputController {
       events.on('blur', onBlur);
       this._unbind.push(() => events.off('blur', onBlur));
     }
+    if (typeof window !== 'undefined') {
+      const onFocus = () => {
+        if (isUiInputTarget(document.activeElement)) this.flush();
+      };
+      window.addEventListener('focusin', onFocus, true);
+      this._unbind.push(() => window.removeEventListener('focusin', onFocus, true));
+    }
   }
 
   /** 采样一次并推进边沿状态 */
   update() {
+    if (typeof document !== 'undefined' && isUiInputTarget(document.activeElement)) {
+      this.flush();
+      return this.state;
+    }
     const codeSet = new Set();
     for (const [code, key] of this._keyMap) {
       if (key.isDown) codeSet.add(code);
@@ -124,13 +139,14 @@ export class InputController {
 
   /** 清空按住状态（失焦 / 暂停时调用） */
   flush() {
+    for (const key of this._keyMap.values()) key.reset?.();
     this.state = createIdleState();
   }
 
   destroy() {
     this._unbind.forEach((fn) => fn());
     this._unbind = [];
-    this._keyMap.clear();
     this.flush();
+    this._keyMap.clear();
   }
 }
