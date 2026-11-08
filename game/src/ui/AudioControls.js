@@ -101,7 +101,22 @@ export function mountAudioControls(manager = audio, parent = document.body) {
     wrapper.addEventListener(eventName, (event) => event.stopPropagation());
   }
   wrapper.addEventListener('pointerdown', () => manager.unlock());
+  // 适配 develop #76 的「声音面板卡键」修复：点击声音控件外部时释放其内部控件的
+  // 键盘焦点，防止滑杆/按钮持续吃掉 A/D/Space 等游戏按键。
+  // 原版挂在 panel 上，这里随结构改挂 wrapper（图标+面板一起管）；
+  // 用 document 捕获相位，wrapper 的 stopPropagation（冒泡）不影响它先行触发。
+  const releaseFocus = (event) => {
+    const focused = document.activeElement;
+    if (wrapper.contains(focused) && !wrapper.contains(event.target)) focused.blur();
+  };
+  document.addEventListener('pointerdown', releaseFocus, true);
   updateMute();
   parent.appendChild(wrapper);
-  return { element: wrapper, destroy: () => wrapper.remove() };
+  return {
+    element: wrapper,
+    destroy() {
+      document.removeEventListener('pointerdown', releaseFocus, true);
+      wrapper.remove();
+    },
+  };
 }
