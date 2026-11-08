@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { ensurePlaceholderTextures, PARALLAX_SETS } from './sceneHelpers.js';
 import { preloadSpriteAtlases, registerSpriteAnimations } from './spriteAtlases.js';
 import { preloadMonsterSprites, registerMonsterAnimations } from './monsterSprites.js';
+import { playVideo } from '../ui/VideoOverlay.js';
 
 /** 成员B 的场景瓦片图集（issue #16：第一关瓦片上墙） */
 const TILESET_ATLASES = ['school_corridor', 'school_props', 'easter_eggs', 'office_rain', 'office_props', 'home_autumn', 'courtyard_props'];
@@ -122,10 +123,14 @@ export default class BootScene extends Phaser.Scene {
     applyFontFallback(typeof document !== 'undefined' ? document : undefined);
   }
 
-  create() {
+  async create() {
     ensurePlaceholderTextures(this);
     registerSpriteAnimations(this);
     registerMonsterAnimations(this);
+
+    // 开场视频：播放结束（或跳过）后才进入第一关；视频缺失/失败时直接继续，不阻塞游戏。
+    await playVideo('assets/video/intro.mp4', { skipAfterMs: 2200 });
+
     this.scene.start('StageScene', { phase: 'youth' });
   }
 }
