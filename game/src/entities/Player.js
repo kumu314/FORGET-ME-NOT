@@ -44,6 +44,7 @@ import {
   tickMp,
   trySpendMp,
 } from './combatMath.js';
+import { updateHoverWatch } from './hoverFuse.js';
 
 export function selectPlayerAnimation({
   phaseId,
@@ -279,6 +280,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     this._tickMp(delta);
+    this._tickHoverFuse(delta); // issue #74 保险丝：持续低速滞空自动恢复重力
     this._tickBlock(delta, input);
     this._handleHorizontal(delta, input);
     this._handleJump(input, delta);
@@ -286,6 +288,32 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this._handleRanged(input);
     this._tickMelee(delta);
     this._syncAnimation();
+  }
+
+  /** issue #74 保险丝：低速滞空看门狗（纯判定在 hoverFuse.js，这里只执行恢复） */
+  _tickHoverFuse(delta) {
+    const vy = this.body?.velocity?.y ?? 0;
+    const prev = this._hoverWatchMs ?? 0;
+    const prevCd = this._hoverCooldownMs ?? 0;
+    const r = updateHoverWatch(prev, delta, this.isGrounded, vy, prevCd);
+    this._hoverWatchMs = r.watchMs;
+    this._hoverCooldownMs = r.cooldownMs;
+    if (r.tripped) this._tripHoverFuse();
+  }
+
+  /** 症状兜底恢复（根因未明）：报告者实测有效的组合 + 现场快照留档 */
+  _tripHoverFuse() {
+    if (!this.body) return;
+    this.body.setAllowGravity(true);
+    this.body.setGravityY(PHYSICS.gravityY);
+    this.setVelocityY(50);
+    let snapshot = null;
+    try {
+      snapshot = typeof window !== 'undefined' ? window.__uteDiagnostics?.snapshot?.() ?? null : null;
+    } catch (e) { /* 诊断挂掉不影响恢复 */ }
+    console.warn('[fuse] #74 悬浮保险丝触发：强制重力恢复', snapshot ? '（现场快照见下）' : '');
+    if (snapshot) console.warn('[fuse] snapshot:', snapshot);
+    this.scene?.events?.emit('fuse:hover-recovery', { x: this.x, y: this.y, snapshot });
   }
 
   _tickTimers(delta) {
