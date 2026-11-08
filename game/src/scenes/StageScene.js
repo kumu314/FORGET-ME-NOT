@@ -432,8 +432,12 @@ export default class StageScene extends Phaser.Scene {
 
   _buildChild() {
     if (this.phaseId !== 'elder') return;
+    // issue #81：boss_child 原生 48×48 是 Boss 级体格，直接摆放会比 24×24 的老人高约一倍。
+    // 孩子按"佝偻老人 × 1.25"定标（≈30px），origin 底部对齐地面，拥抱时身高关系才成立。
     this.child = this.add.sprite(ELDER_CHILD.x, this._groundTop(), 'boss_child', 'idle_0')
-      .setOrigin(0.5, 47 / 48).setDepth(18);
+      .setOrigin(0.5, 47 / 48)
+      .setDisplaySize(30, 30)
+      .setDepth(18);
     this.child.play('boss_child:idle');
     this.add.text(ELDER_CHILD.x - 96, this._groundTop() - 68,
       '孩子拖着行李箱，准备远行。\n慢慢走到他身后，抱一抱他。', {
