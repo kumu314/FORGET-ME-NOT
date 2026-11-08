@@ -1,6 +1,6 @@
 # AI/FX quality fixes (baseline 73b2510)
 
-Implemented in the independent `UNTIL-THE-END-ai` worktree, updated against merged develop `ba8cfc6`. The integration agent authorized the single Player horizontal-speed hook below; StageScene, gameConfig and UI remain outside this branch's changes.
+Implemented in the independent `UNTIL-THE-END-ai` worktree, updated against merged develop `d5b82e6` (PR #76). The integration agent authorized the single Player horizontal-speed hook below; StageScene, gameConfig and UI remain outside this branch's changes.
 
 ## Connected integration hook
 
@@ -17,7 +17,7 @@ Player._handleHorizontal now multiplies the computed walking speed by `this.pass
 
 ## Verification
 
-`cd game && npm test`: 119/119 tests passed across 11 files, including 12 AI-quality cases (three directly invoke Player._handleHorizontal for youth/middle/elder). `npm run build` succeeded (44 modules; existing large-bundle warning only). Phaser is mocked in unit tests; they do not establish real-browser physics behavior.
+`cd game && npm test`: after merging PR #76, 134/134 tests passed across all 13 files discovered by Vitest, including 12 AI-quality cases (three directly invoke Player._handleHorizontal for youth/middle/elder). `npm run build` succeeded (45 modules; existing large-bundle warning only). Phaser is mocked in unit tests; they do not establish real-browser physics behavior.
 
 `node tools/verify-ai-quality.cjs D:/CodexOutputs/黑客松/reports/quality-20261108/ai-browser` passed 15/15 explicit browser checks on 2026-11-08 using actual Vite-served source, real Phaser and Edge Canvas (renderer type 1). No page errors were recorded. The tool defaults to `output/playwright/ai-quality` and accepts an output directory; existing local Playwright and Edge paths can be overridden with PLAYWRIGHT_MODULE and EDGE_PATH. All browser profiles, Vite cache and artifacts are written to the D-drive output directory.
 

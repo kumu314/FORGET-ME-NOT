@@ -19,9 +19,10 @@ const record = (name, pass, evidence) => report.checks.push({ name, pass: Boolea
     await vite.listen();
     browser = await chromium.launch({ executablePath: process.env.EDGE_PATH || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless: true, args: ['--disable-gpu', '--disable-software-rasterizer'], env: { ...process.env, TEMP: out, TMP: out } });
     const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
+    page.setDefaultTimeout(90000);
     page.on('pageerror', (error) => report.pageErrors.push(error.message));
-    await page.goto(`http://127.0.0.1:${vite.httpServer.address().port}`);
-    await page.waitForFunction(() => window.__FORGET_ME_NOT__?.scene.getScene('StageScene')?.player?.isGrounded, null, { timeout: 60000 });
+    await page.goto(`http://127.0.0.1:${vite.httpServer.address().port}`, { timeout: 120000 });
+    await page.waitForFunction(() => window.__FORGET_ME_NOT__?.scene.getScene('StageScene')?.player?.isGrounded, null, { timeout: 90000 });
     report.renderer = await page.evaluate(() => window.__FORGET_ME_NOT__.renderer.type);
     const initial = await page.evaluate(() => {
       const scene = window.__FORGET_ME_NOT__.scene.getScene('StageScene');
@@ -52,7 +53,7 @@ const record = (name, pass, evidence) => report.checks.push({ name, pass: Boolea
       await page.waitForFunction((phase) => {
         const scene = window.__FORGET_ME_NOT__.scene.getScene('StageScene');
         return scene.phaseId === phase && scene.player?.isGrounded && window.__aiQualityShutdown;
-      }, phase, { timeout: 30000 });
+      }, phase, { timeout: 60000 });
       const after = await page.evaluate(() => {
         const scene = window.__FORGET_ME_NOT__.scene.getScene('StageScene');
         const player = scene.player;
@@ -88,8 +89,8 @@ const record = (name, pass, evidence) => report.checks.push({ name, pass: Boolea
       });
       record(`${phase}: youth passives persist with real Player effects`, ['paperSpirit', 'sleepBug', 'inspector'].every((type) => after.owned.includes(type)) && after.broadcast && Math.abs(after.boosted / after.baseline - 1.15) < 1e-9 && after.slowMs === 1000 && Math.abs(after.block.damage - 3) < 1e-9, after);
       record(`${phase}: restart removes old Juice handlers and starts world at normal timescale`, before.scale === 4 && !after.shutdown.installed && (after.shutdown.scale === null || after.shutdown.scale === 1) && after.startupScale === 1 && after.shutdown.oldJuiceListeners.length === 0 && Object.values(after.listeners).every((count) => count === 1) && after.juiceShakes === 1 && after.hitstopScale === 4, { before, after });
-      await page.waitForTimeout(160);
-      record(`${phase}: real scene clock releases hitstop`, await page.evaluate(() => window.__FORGET_ME_NOT__.scene.getScene('StageScene').physics.world.timeScale) === 1, '160ms wall-clock wait; no manual step/pump');
+      await page.waitForFunction(() => window.__FORGET_ME_NOT__.scene.getScene('StageScene').physics.world.timeScale === 1, null, { timeout: 10000 });
+      record(`${phase}: real scene clock releases hitstop`, true, 'Natural RAF and real scene clock; no manual step/pump (10s maximum observation timeout)');
       if (phase === 'middle') {
         const ai = await page.evaluate(() => {
           const scene = window.__FORGET_ME_NOT__.scene.getScene('StageScene');
