@@ -2,7 +2,7 @@
  * 主角控制器（成员C：主角操控 / 动作物理 / 机能演变）
  *
  * 继承 Phaser.Physics.Arcade.Sprite，负责：
- *  1. 极简操作：A/D 移动、Space 跳跃、S 下蹲格挡（免伤 70%）
+ *  1. 极简操作：A/D 移动、W/Space 跳跃、S 下蹲格挡（免伤 70%）
  *  2. 战斗判定：J 近战三连击、L 远程投掷、Space+J 空中飞踢、Space+L 空中投掷
  *  3. 生命周期数值：青年 200/50 回2s → 中年 120/100 回5s → 老年 50/200 回12s
  *  4. 老年机能剥夺：锁定跳跃，按 Space 只播放咳嗽微动作，离地为 0
@@ -458,6 +458,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.comboSinceActiveMs = 0;
     // 出招时锁住水平意图（老年拄拐点地：动作更慢，且带定身）
     if (MELEE_CHAIN[this.phaseId].appliesStun) this.setVelocityX(0);
+    // 挥击特效挂点：场景侧消费（成员E 的 ui 层不介入，纯场景 VFX）
+    this.scene?.events?.emit('player:melee-start', {
+      x: this.x,
+      y: this.y,
+      facing: this.facing,
+      stage,
+      phaseId: this.phaseId,
+      airKick,
+    });
   }
 
   _tickMelee(delta) {
@@ -508,10 +517,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   getMeleeHitbox() {
     if (this.meleeStage === 0) return null;
     const chain = MELEE_CHAIN[this.phaseId];
-    const w = chain.reach + 10;
-    const h = this.meleeAirKick ? 26 : 20;
+    const w = chain.reach + 12;
+    const h = this.meleeAirKick ? 26 : 24;
     const cx = this.facing > 0 ? this.x + chain.reach / 2 : this.x - chain.reach / 2;
-    const cy = this.meleeAirKick ? this.y - this.displayHeight - 8 : this.y - h / 2 - 4;
+    // 纵向贴脚底：原来 cy = y - h/2 - 4，框底边比脚底还高 4px，
+    // 12px 高的贴地小怪只有 8px 纵向重叠，怪一跳跃（leapVy -160）或站上台阶就整体脱靶。
+    // 现在框底 = 脚底，矮怪全程在框内。
+    const anchorY = this.meleeAirKick ? this.y - this.displayHeight - 8 : (this.body?.bottom ?? this.y);
+    const cy = this.meleeAirKick ? anchorY : anchorY - h / 2;
     return new Phaser.Geom.Rectangle(cx - w / 2, cy - h / 2, w, h);
   }
 
@@ -589,7 +602,22 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     const key = getAnimationKey(atlasId, animationName);
-    if (this.anims.currentAnim?.key !== key) this.play({ key, ignoreIfPlaying: true });
+    if (this.anims.currentAnim?.key !== key) {
+      this.play({ key, ignoreIfPlaying: true });
+      // 攻击动画按硬直时长压缩播放：
+      // 图集里 attack_* 是 4 帧 @8~11fps（整段 360~480ms），而硬直只有 120~240ms，
+      // 不加速的话 _inRecovery 一结束就切回 idle —— 实测整段挥击只播得出第 1 帧。
+      if (animationName.startsWith('attack_')) {
+        const clip = this.scene.anims.get(key);
+        const frames = clip?.frames?.length || 4;
+        const clipMs = frames * (clip?.msPerFrame || 90);
+        // 留 20% 余量：动画要在硬直结束前播完，否则最后一帧会被 idle 直接切掉看不见
+        const budget = Math.max(70, (this.meleeRecoverAt || 120) * 0.8);
+        this.anims.timeScale = Math.min(5, Math.max(1, clipMs / budget));
+      } else {
+        this.anims.timeScale = 1;
+      }
+    }
   }
 
   // ==========================================================

@@ -44,7 +44,9 @@ export class ProjectilePool {
     let b = this.pool.find((o) => o && !o.active);
     if (!b) {
       b = scene.add.sprite(cfg.x, cfg.y, cfg.texture);
-      b.setDepth(6);
+      // depth 17：地形瓦片 10~12、小怪 14、玩家 20。
+      // 原来写 6，敌方子弹永远压在地板和墙后面 —— 贴地飞的弹幕会被场景"吃掉"。
+      b.setDepth(17);
       this.pool.push(b);
     }
     // issue #93：可选动画键（如 'projectiles:chalk'）。池复用时先停旧动画，
@@ -166,7 +168,7 @@ export class ProjectilePool {
       });
     }
 
-    const fx = this.scene.add.circle(b.x, b.y, b.aoeRadius, 0xffe0a0, 0.35).setDepth(7);
+    const fx = this.scene.add.circle(b.x, b.y, b.aoeRadius, 0xffe0a0, 0.35).setDepth(18);
     this.scene.tweens.add({
       targets: fx,
       alpha: 0,

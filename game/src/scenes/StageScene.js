@@ -17,6 +17,7 @@ import { ELDER_CHILD, canHugChild } from '../config/elderEnding.js';
 import { installStagePassives, tickPassiveRecovery } from '../entities/stagePassives.js';
 import { installTelemetry } from '../telemetry/PlaytestTelemetry.js';
 import { installJuice } from '../fx/Juice.js';
+import { installHitFx } from '../fx/hitFx.js';
 import { installPhysicsDiagnostics } from '../core/PhysicsDiagnostics.js';
 
 /**
@@ -66,6 +67,9 @@ const EGG_BY_ID = {
 };
 
 /** 音效只加载一次（三个关卡共用同一份 SFX 缓冲） */
+/** 近战判定框调试绘制：排查判定时才打开（正式版必须 false，否则挥击会在角色身上闪红框） */
+const DEBUG_MELEE_BOX = false;
+
 let sfxLoading = null;
 function ensureSfxLoaded() {
   if (!sfxLoading) sfxLoading = audio.loadSfx();
@@ -137,6 +141,7 @@ export default class StageScene extends Phaser.Scene {
     installTelemetry(this); // 试玩遥测（issue #26）：用时/死亡/承伤/按键，__fmnTelemetry.download() 导出
     installPhysicsDiagnostics(this);
     installJuice(this); // 打击感机制层（issue #26）：命中顿帧 + 三档屏震
+    installHitFx(this); // 视觉特效层：挥击弧光 / 命中火花 / 敌人预警与爆炸
 
     this.cameras.main.startFollow(this.player, true, 0.2, 0.2);
     this.cameras.main.setDeadzone(60, 40);
@@ -403,7 +408,10 @@ export default class StageScene extends Phaser.Scene {
     this.player.setSpawnPoint(spawn.x, spawn.y);
     this.player.setDepth(20);
     this.physics.add.collider(this.player, this.solids);
-    this.player.setDebugMeleeBox(true);
+    // 判定框调试绘制（红色半透明矩形，depth 9000）默认关闭：
+    // 之前这里写死 true，导致每次挥击都会在角色身上闪一个红框，正式版看起来像"动画出错"。
+    // 排查判定时可临时改回 true。
+    this.player.setDebugMeleeBox(DEBUG_MELEE_BOX);
   }
 
   /** AI 接线：刷怪 / 忠犬继承 / Boss 触发线，全部由布阵数据驱动 */
@@ -594,7 +602,10 @@ export default class StageScene extends Phaser.Scene {
       this._syncHud(delta);
       return;
     }
-    this.player.setDebugMeleeBox(true);
+    // 判定框调试绘制默认关闭（原来每帧无脑 setDebugMeleeBox(true)，
+    // 挥击时会在角色身上闪一个红色半透明矩形，正式版看着像"动画出错"）。
+    // 排查判定时把 DEBUG_MELEE_BOX 改成 true。
+    if (DEBUG_MELEE_BOX) this.player.setDebugMeleeBox(true);
 
     // 老年记忆碎片的追踪目标（ChalkBullet 读 scene.targets；含 Boss）
     this.targets = this.ai ? [...this.ai.aliveMonsters(), this.ai.activeBoss()].filter(Boolean) : [];
@@ -917,7 +928,7 @@ export default class StageScene extends Phaser.Scene {
 
   _buildDemoGuide() {
     const guide = this.add
-      .text(10, 44, 'A/D 移动   Space 跳跃   S 格挡\nJ 近战   L 远程   T 切年龄   R 复活', {
+      .text(10, 44, 'A/D 移动   W / Space 跳跃   S 格挡\nJ 近战   L 远程   T 切年龄   R 复活', {
         fontFamily: 'monospace',
         fontSize: '8px',
         color: '#d7f5d8',
