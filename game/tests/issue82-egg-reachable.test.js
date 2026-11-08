@@ -6,6 +6,7 @@ vi.mock('phaser', () => ({
 }));
 
 import { getStageLayout, STAGE_LAYOUTS, GROUND_Y } from '../src/config/stageLayout.js';
+import { PHYSICS } from '../src/config/gameConfig.js';
 
 /**
  * issue #82 回归守卫：彩蛋与可破碎物必须落在「玩家实际可达」的位置。
@@ -82,5 +83,31 @@ describe('issue #82 回归：彩蛋/破碎点必须在玩家可达域', () => {
     const thermos = middle.easterEggs.find((e) => e.id === 'thermos');
     expect(thermos).toBeTruthy();
     expect(groundBlockedBySolid(middle, thermos.x)).toBe(false);
+  });
+
+  /**
+   * issue #65 回归守卫：地面上任何「挡住身体高度带」的 solid（= 地形墙）
+   * 顶部必须处于跳跃可达范围（跳升极限 48px），否则走廊被硬墙堵死。
+   * 历史案例：储物柜 y184（顶距地 56px > 48）堵死一关，见 issue #65。
+   */
+  it('所有关卡的地形墙顶部都在跳跃可达范围内（issue #65 类）', () => {
+    const JUMP_REACH = PHYSICS.jumpVelocity ** 2 / (2 * PHYSICS.gravityY); // 48px
+    for (const [phaseId, layout] of Object.entries(Object.fromEntries(
+      ['youth', 'middle', 'elder'].map((p) => [p, getStageLayout(p)]),
+    ))) {
+      for (const s of layout.solids) {
+        const coversBodyBand = s.y <= PLAYER_BODY_TOP && s.y + s.h >= GROUND_Y;
+        if (!coversBodyBand) continue; // 高台/头顶物不在此列（另有贴面与路线设计约束）
+        expect({
+          phase: phaseId, kind: s.kind, x: s.x, top: s.y,
+          rise: GROUND_Y - s.y,
+        }).toEqual({
+          phase: phaseId, kind: s.kind, x: s.x, top: s.y,
+          rise: expect.any(Number),
+        });
+        expect(GROUND_Y - s.y).toBeLessThanOrEqual(JUMP_REACH);
+        expect(GROUND_Y - s.y).toBeGreaterThan(0);
+      }
+    }
   });
 });
