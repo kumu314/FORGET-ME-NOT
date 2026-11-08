@@ -32,14 +32,22 @@ export class ProjectilePool {
       b.setDepth(6);
       this.pool.push(b);
     }
-    b.setTexture(cfg.texture);
+    // issue #93：可选动画键（如 'projectiles:chalk'）。池复用时先停旧动画，
+    // 无动画的 spawn 必须回退静态纹理，避免继承上一发子弹的动画帧。
+    const hasAnim = Boolean(cfg.anim && scene.anims.exists(cfg.anim));
+    if (hasAnim) {
+      b.play(cfg.anim);
+    } else {
+      b.anims.stop();
+      b.setTexture(cfg.texture);
+    }
     b.setPosition(cfg.x, cfg.y);
     b.setActive(true);
     b.setVisible(true);
     b.setAlpha(1);
     b.setScale(1);
     b.clearTint();
-    b.setAngle(cfg.angle || 0);
+    b.setAngle(hasAnim ? 0 : (cfg.angle || 0));
 
     b.vx = cfg.vx || 0;
     b.vy = cfg.vy || 0;

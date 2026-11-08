@@ -79,7 +79,8 @@ export class BossTeacher extends BossBase {
             vx: Math.cos(ang) * 180,
             vy: Math.sin(ang) * 180,
             angle: Phaser.Math.RadToDeg(ang),
-            texture: 'bullet_chalk_boss',
+            texture: 'bullet_chalk_boss', // 占位兜底（无图集时 6×3 与背景同色，肉眼难辨）
+            anim: 'projectiles:chalk', // issue #93：真粉笔弹图集动画，替代隐形占位
             damage: dmg.snipe,
             faction: 'enemy',
             life: 1.8,
