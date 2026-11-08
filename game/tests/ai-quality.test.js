@@ -10,6 +10,7 @@ import { AI, DOG, MONSTERS } from '../src/config/aiConfig.js';
 import { LIFECYCLE } from '../src/config/gameConfig.js';
 import { MonsterFSM, MonsterTypes } from '../src/ai/MonsterFSM.js';
 import { AIManager } from '../src/ai/AIManager.js';
+import Player from '../src/entities/Player.js';
 import { DogCompanion } from '../src/ai/DogCompanion.js';
 import { installJuice, JUICE } from '../src/fx/Juice.js';
 import { grantStagePassive, installStagePassives, recoverMeleeKillMp } from '../src/entities/stagePassives.js';
@@ -23,6 +24,24 @@ function hero() {
 }
 
 describe('青年掉落的实际效果与来源', () => {
+  it.each(['youth', 'middle', 'elder'])('%s真实Player横向控制应用15%移速且跨关恢复', (phaseId) => {
+    const save = registry();
+    const velocity = { x: 0 };
+    const p = Object.assign(Object.create(Player.prototype), {
+      phaseId, phase: LIFECYCLE[phaseId], hurtLockMs: 0, blockHeldForMs: 0, coughMs: 0,
+      body: { blocked: { down: true }, touching: {}, velocity },
+      setFlipX: vi.fn(), setVelocityX: (x) => { velocity.x = x; },
+    });
+    p._handleHorizontal(16, { right: true });
+    const baselineSpeed = velocity.x;
+    grantStagePassive(hero(), save, 'sleepBug');
+    installStagePassives(p, save);
+    p._handleHorizontal(16, { right: true });
+    expect(velocity.x).toBeCloseTo(baselineSpeed * 1.15);
+    p._handleHorizontal(16, { left: true });
+    expect(velocity.x).toBeCloseTo(-baselineSpeed * 1.15);
+  });
+
   it('所有青年掉落均保存，重新建立角色后恢复效果', () => {
     const save = registry();
     const p = hero();

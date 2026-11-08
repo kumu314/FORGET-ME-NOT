@@ -342,7 +342,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.setFlipX(this.facing < 0);
 
     const grounded = this.isGrounded;
-    let speed = computeMoveSpeed(PHYSICS.walkSpeed, this.phase, grounded);
+    let speed = computeMoveSpeed(PHYSICS.walkSpeed, this.phase, grounded) * (this.passiveMoveMult ?? 1);
     if (!grounded) {
       speed *=
         this.phaseId === 'middle' ? PHYSICS.airControlFactorMiddle : PHYSICS.airControlFactorYouth;
