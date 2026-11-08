@@ -99,11 +99,9 @@ const YOUTH_TILES = [
   { t: 'door_top', x: 1208, y: 208, w: 1, h: 1 },
   { t: 'door_bottom', x: 1208, y: 224, w: 1, h: 1 },
 
-  // ── 储物柜（走廊后半，与 solid 880/184/120/56 对齐，4 行 × 8 列） ──
-  { t: 'locker_tl', x: 880, y: 184, w: 4, h: 1 },
-  { t: 'locker_tr', x: 944, y: 184, w: 4, h: 1 },
-  { t: 'locker_bl', x: 880, y: 200, w: 4, h: 1 },
-  { t: 'locker_br', x: 944, y: 200, w: 4, h: 1 },
+  // ── 储物柜（走廊后半，与 solid 880/200/120/40 对齐，3 行 × 8 列；issue #65：顶 y200 可跳跃翻越） ──
+  { t: 'locker_tl', x: 880, y: 200, w: 4, h: 1 },
+  { t: 'locker_tr', x: 944, y: 200, w: 4, h: 1 },
   { t: 'locker_bl', x: 880, y: 216, w: 4, h: 1 },
   { t: 'locker_br', x: 944, y: 216, w: 4, h: 1 },
   { t: 'locker_bl', x: 880, y: 232, w: 4, h: 1 },
@@ -251,8 +249,8 @@ export const STAGE_LAYOUTS = Object.freeze({
       // 讲台（借力上黑板报横梁）
       { x: 520, y: 200, w: 64, h: 40, kind: 'podium' },
       { x: 568, y: 148, w: 128, h: 10, kind: 'beam', label: '黑板报横梁' },
-      // 走廊后半段储物柜顶
-      { x: 880, y: 184, w: 120, h: 56, kind: 'locker' },
+      // 走廊后半段储物柜顶（issue #65：顶 y200 与讲台同高，40px 跳升可翻越，不再堵路）
+      { x: 880, y: 200, w: 120, h: 40, kind: 'locker' },
       { x: 1120, y: 152, w: 80, h: 12, kind: 'desk' },
     ],
     /** 彩蛋锚点（StageScene 负责贴图与弹窗；letter 由 breakables 打碎后生成） */
