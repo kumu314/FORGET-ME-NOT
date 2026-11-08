@@ -1,33 +1,40 @@
 import { audio } from '../audio/AudioManager.js';
 
+/**
+ * 声音控制面板：默认折叠成 40×40 喇叭图标钉在视口右下角，
+ * 点击展开完整面板（贴右边缘向上弹出，不遮挡画布中下部的剧情提示文字），
+ * 再点收起。折叠态用 🔊/🔇 图标 + 边框变色反映当前是否静音。
+ *
+ * 注意：静音按钮必须是本组件创建的第一个 <button>（audio.test.js 依赖该顺序），
+ * 因此展开/收起图标按钮放在面板内容之后再创建。
+ */
 export function mountAudioControls(manager = audio, parent = document.body) {
-  const panel = document.createElement('details');
-  panel.id = 'audio-controls';
-  Object.assign(panel.style, {
-    position: 'fixed', right: '12px', bottom: '12px', zIndex: '40',
-    color: '#fff8e8', background: '#19232af2', border: '1px solid #c9b984',
-    borderRadius: '6px', padding: '10px', font: '14px sans-serif', width: '220px',
-    maxWidth: 'calc(100vw - 48px)', boxSizing: 'border-box',
+  const wrapper = document.createElement('div');
+  wrapper.id = 'audio-controls';
+  Object.assign(wrapper.style, {
+    position: 'fixed', right: '8px', bottom: '8px', zIndex: '40',
   });
-  const summary = document.createElement('summary');
-  summary.textContent = '声音设置';
-  summary.style.cursor = 'pointer';
-  panel.appendChild(summary);
+
+  const panel = document.createElement('div');
+  panel.id = 'audio-controls-panel';
+  Object.assign(panel.style, {
+    position: 'absolute', right: '0', bottom: 'calc(100% + 4px)',
+    width: '220px', maxWidth: 'calc(100vw - 48px)', boxSizing: 'border-box',
+    maxHeight: 'calc(100vh - 64px)', overflowY: 'auto',
+    color: '#fff8e8', background: '#19232af2', border: '1px solid #c9b984',
+    borderRadius: '6px', padding: '10px', font: '14px sans-serif',
+    display: 'none',
+  });
+  const header = document.createElement('div');
+  header.textContent = '声音设置';
+  header.style.cssText = 'font-weight:600;margin-bottom:4px';
+  panel.appendChild(header);
+
   const mute = document.createElement('button');
   mute.type = 'button';
-  mute.style.cssText = 'margin:10px 0;padding:6px 10px;cursor:pointer';
-  const updateMute = () => {
-    mute.textContent = manager.muted ? '恢复声音' : '静音';
-    mute.setAttribute('aria-pressed', String(manager.muted));
-    summary.textContent = manager.muted ? '声音设置 · 已静音' : '声音设置';
-  };
-  mute.addEventListener('click', () => {
-    manager.unlock();
-    manager.setMuted(!manager.muted);
-    updateMute();
-  });
+  mute.style.cssText = 'margin:6px 0;padding:6px 10px;cursor:pointer';
   panel.appendChild(mute);
-  updateMute();
+
   for (const [labelText, property, setter] of [
     ['总音量', 'volume', 'setVolume'],
     ['音乐', 'musicVolume', 'setMusicVolume'],
@@ -54,21 +61,47 @@ export function mountAudioControls(manager = audio, parent = document.body) {
     label.append(caption, slider);
     panel.appendChild(label);
   }
+
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  Object.assign(toggle.style, {
+    width: '40px', height: '40px', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', padding: '0',
+    font: '18px/1 sans-serif', cursor: 'pointer',
+    color: '#ffe6a7', background: '#19232af2',
+    border: '1px solid #c9b984', borderRadius: '6px',
+  });
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-controls', 'audio-controls-panel');
+
+  const updateMute = () => {
+    mute.textContent = manager.muted ? '恢复声音' : '静音';
+    mute.setAttribute('aria-pressed', String(manager.muted));
+    toggle.textContent = manager.muted ? '🔇' : '🔊';
+    toggle.style.borderColor = manager.muted ? '#d9806a' : '#c9b984';
+    toggle.setAttribute('aria-label', manager.muted ? '声音设置（已静音）' : '声音设置');
+  };
+  const setExpanded = (open) => {
+    panel.style.display = open ? 'block' : 'none';
+    toggle.setAttribute('aria-expanded', String(open));
+  };
+
+  mute.addEventListener('click', () => {
+    manager.unlock();
+    manager.setMuted(!manager.muted);
+    updateMute();
+  });
+  toggle.addEventListener('click', () => {
+    manager.unlock();
+    setExpanded(panel.style.display === 'none');
+  });
+
+  wrapper.append(toggle, panel);
   for (const eventName of ['keydown', 'keyup', 'pointerdown', 'pointerup']) {
-    panel.addEventListener(eventName, (event) => event.stopPropagation());
+    wrapper.addEventListener(eventName, (event) => event.stopPropagation());
   }
-  panel.addEventListener('pointerdown', () => manager.unlock());
-  const releasePanelFocus = (event) => {
-    const focused = document.activeElement;
-    if (panel.contains(focused) && !panel.contains(event.target)) focused.blur();
-  };
-  document.addEventListener('pointerdown', releasePanelFocus, true);
-  parent.appendChild(panel);
-  return {
-    element: panel,
-    destroy() {
-      document.removeEventListener('pointerdown', releasePanelFocus, true);
-      panel.remove();
-    },
-  };
+  wrapper.addEventListener('pointerdown', () => manager.unlock());
+  updateMute();
+  parent.appendChild(wrapper);
+  return { element: wrapper, destroy: () => wrapper.remove() };
 }
