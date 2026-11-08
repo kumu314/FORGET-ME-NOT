@@ -127,6 +127,11 @@ export class TypewriterTransition {
   _build() {
     const el = document.createElement('div');
     el.className = 'tt-overlay';
+    el.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this._fast = true;
+    });
     el.innerHTML = `<div class="tt-text"></div>`;
     document.body.appendChild(el);
     this._el = el;
