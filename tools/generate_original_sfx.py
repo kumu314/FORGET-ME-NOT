@@ -249,7 +249,9 @@ def main():
     parser.add_argument('--report', type=Path)
     arguments = parser.parse_args()
     destination = arguments.output_dir
-    license_bytes = (ROOT/'LICENSE').read_bytes()
+    # 换行统一成 LF 再哈希/落盘：否则 core.autocrlf 的 Windows 检出会把
+    # LICENSE 变成 CRLF（多出 21 字节 = 21 个换行），生成器与 manifest 的平台无关性就没了。
+    license_bytes = (ROOT/'LICENSE').read_bytes().replace(b'\r\n', b'\n')
     files = []
     metrics = {}
     mismatches = []

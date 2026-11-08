@@ -1,7 +1,7 @@
 {
   "generatedBy": "tools/generate_original_sfx.py",
   "generatorVersion": 1,
-  "generatorSha256": "2fdefd2ec90850e42df19b07c4e39a3c9ee82db093e0704717e15c4938cf547f",
+  "generatorSha256": "953c6eefe6e3565b7e4f6e3733e755dfa6fb4aa17b82689780531e6ce73b2c86",
   "notes": "All 32 SFX are original procedural waveforms. No external samples, speech or animal recordings are used. Dog vocalizations are synthetic. Existing three BGM scores are unchanged.",
   "license": "MIT",
   "licenseFile": "LICENSE.txt",
