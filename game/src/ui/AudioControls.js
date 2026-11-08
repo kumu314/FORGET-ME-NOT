@@ -58,6 +58,17 @@ export function mountAudioControls(manager = audio, parent = document.body) {
     panel.addEventListener(eventName, (event) => event.stopPropagation());
   }
   panel.addEventListener('pointerdown', () => manager.unlock());
+  const releasePanelFocus = (event) => {
+    const focused = document.activeElement;
+    if (panel.contains(focused) && !panel.contains(event.target)) focused.blur();
+  };
+  document.addEventListener('pointerdown', releasePanelFocus, true);
   parent.appendChild(panel);
-  return { element: panel, destroy: () => panel.remove() };
+  return {
+    element: panel,
+    destroy() {
+      document.removeEventListener('pointerdown', releasePanelFocus, true);
+      panel.remove();
+    },
+  };
 }
