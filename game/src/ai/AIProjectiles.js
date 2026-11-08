@@ -13,6 +13,21 @@ import Phaser from 'phaser';
  *  { x, y, vx, vy, texture, damage, life,
  *    gravity, slow:{mult,duration}, aoeRadius, targetY, pierce, angle, spin }
  */
+/**
+ * 占位弹道的视觉放大表（issue #87）：占用纹理只有 6~12px，在雨夜等复杂背景上
+ * 几乎不可见（玩家反馈「看不到攻击方式、莫名奇妙掉血」）。按纹理给默认放大倍数，
+ * 碰撞走 getBounds、与视觉同比例，所见即所中。调用方仍可用 cfg.scale 覆盖。
+ */
+const VISUAL_SCALE = Object.freeze({
+  bullet_ring: 2.4,       // 老板·画大饼：金色烟圈
+  bullet_shockwave: 2.5,  // 老师横扫 / 老板盖章：贴地冲击波
+  bullet_letter: 1.9,     // 老板二阶段：裁员信
+  bullet_chalk_boss: 2.4, // 老师狙击：粉笔
+  bullet_dictionary: 1.8, // 老师抽查：词典
+  bullet_paper: 1.8,      // 老师二阶段：试卷
+  bullet_bubble: 1.7,     // 瞌睡虫泡泡
+});
+
 export class ProjectilePool {
   constructor(scene) {
     this.scene = scene;
@@ -45,7 +60,9 @@ export class ProjectilePool {
     b.setActive(true);
     b.setVisible(true);
     b.setAlpha(1);
-    b.setScale(1);
+    // 可读性（issue #95）：占位弹道只有 6~12px，按纹理默认放大；
+    // 已上真动画（#93/#94，如粉笔 16×16）path 保持原生尺寸，只放大占位兜底。
+    b.setScale(cfg.scale ?? (hasAnim ? 1 : (VISUAL_SCALE[cfg.texture] ?? 1)));
     b.clearTint();
     b.setAngle(hasAnim ? 0 : (cfg.angle || 0));
 

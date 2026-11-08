@@ -1,0 +1,11 @@
+{
+  "url": "https://kumu314.github.io/UNTIL-THE-END/",
+  "checkedAt": "2026-11-08T04:14:04.415Z",
+  "readiness": {
+    "hasGame": true,
+    "stageActive": true,
+    "renderType": 1
+  },
+  "http4xx5xx": [],
+  "screenshot": "shots/12-online-pages.png"
+}

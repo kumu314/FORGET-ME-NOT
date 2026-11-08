@@ -138,7 +138,10 @@ export class BossBase extends Phaser.Physics.Arcade.Sprite {
 
   /** 当前应播放的动作键；受击时由 hurtUntil 临时接管 */
   currentAction() {
-    if (this.actionState === 'ACTION') return this.skillAnim(this.pendingSkill) || 'idle';
+    // 预警期也播起手动作（issue #95：原先只有伤害期播，0.4s 预警里 Boss 看着像站着发呆）
+    if (this.actionState === 'TELEGRAPH' || this.actionState === 'ACTION') {
+      return this.skillAnim(this.pendingSkill) || 'idle';
+    }
     if (this.phase === 2) return 'enraged';
     return 'idle';
   }
